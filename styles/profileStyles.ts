@@ -1,0 +1,140 @@
+import { StyleSheet } from 'react-native';
+
+import { AppColors } from '@/context/settings';
+
+export const makeProfileStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 32,
+      paddingBottom: 12,
+      backgroundColor: c.headerBg,
+    },
+    backButton: {
+      padding: 6,
+      marginRight: 8,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: c.text,
+    },
+    scrollContent: {
+      paddingBottom: 40,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      paddingTop: 28,
+      paddingBottom: 24,
+    },
+    avatarWrapper: {
+      position: 'relative',
+      marginBottom: 12,
+    },
+    avatar: {
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      backgroundColor: c.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 3,
+      borderColor: c.card,
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 6,
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+    },
+    avatarInitials: {
+      fontSize: 40,
+      fontWeight: '700',
+      color: '#fff',
+    },
+    addPhotoButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      paddingHorizontal: 18,
+      paddingVertical: 8,
+      borderRadius: 20,
+      gap: 6,
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    addPhotoText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    infoCard: {
+      marginHorizontal: 20,
+      backgroundColor: c.card,
+      borderRadius: 16,
+      paddingVertical: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+      marginBottom: 20,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+    },
+    infoDivider: {
+      height: 1,
+      backgroundColor: c.divider,
+      marginHorizontal: 20,
+    },
+    infoIcon: {
+      marginRight: 14,
+      width: 22,
+      alignItems: 'center',
+    },
+    infoTextGroup: {
+      flex: 1,
+    },
+    infoLabel: {
+      fontSize: 11,
+      color: c.subtext,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    infoValue: {
+      fontSize: 16,
+      color: c.text,
+      fontWeight: '500',
+    },
+    roleBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: 10,
+      backgroundColor: c.divider,
+    },
+    roleBadgeText: {
+      fontSize: 13,
+      color: c.accent,
+      fontWeight: '700',
+    },
+  });
