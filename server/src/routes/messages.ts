@@ -9,7 +9,7 @@ router.use(requireAuth);
 
 /** GET /chats/:chatId/messages — paginated message history */
 router.get('/', async (req: AuthRequest, res) => {
-  const { chatId } = req.params;
+  const chatId = req.params.chatId as string;
   const limit = Math.min(Number(req.query.limit) || 50, 100);
   const before = req.query.before as string | undefined;
 
@@ -42,7 +42,7 @@ router.get('/', async (req: AuthRequest, res) => {
 
 /** POST /chats/:chatId/messages — send a message (REST fallback, primary path is Socket.io) */
 router.post('/', async (req: AuthRequest, res) => {
-  const { chatId } = req.params;
+  const chatId = req.params.chatId as string;
   const { text } = req.body as { text?: string };
   if (!text?.trim()) { res.status(400).json({ error: 'err_empty_message' }); return; }
 
