@@ -58,7 +58,6 @@ export const makeDrawerStyles = (c: AppColors) =>
     },
     drawerFooter: {
       marginTop: 'auto',
-      paddingBottom: 8,
     },
     logoutText: {
       color: '#c0392b',

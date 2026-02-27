@@ -7,11 +7,13 @@ import {
   Image,
   Modal,
   Pressable,
-  SafeAreaView,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDrawerAnimation } from '@/animation/useDrawerAnimation';
 import ChatListItem from '@/components/ChatListItem';
@@ -25,6 +27,7 @@ import { makeHomeStyles } from '@/styles/homeStyles';
 
 export default function HomeScreen() {
   const { scaleW, scaleH } = useLayout();
+  const insets = useSafeAreaInsets();
   const { logout } = useAuth();
   const router = useRouter();
   const { colors } = useSettings();
@@ -70,7 +73,7 @@ export default function HomeScreen() {
           <Animated.View style={[drawerStyles.overlay, { opacity: overlayAnim }]} />
           <Pressable>
             <Animated.View style={[drawerStyles.drawer, { transform: [{ translateX: slideAnim }] }]}>
-              <SafeAreaView style={drawerStyles.drawerInner}>
+              <View style={[drawerStyles.drawerInner, { paddingTop: insets.top }]}>
                 <View style={drawerStyles.drawerHeader}>
                   <TouchableOpacity onPress={() => closeMenu()} activeOpacity={0.7}>
                     <Ionicons name="close" size={24} color={colors.closeIcon} />
@@ -89,13 +92,13 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <View style={drawerStyles.drawerFooter}>
+                <View style={[drawerStyles.drawerFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
                   <TouchableOpacity style={drawerStyles.menuItem} activeOpacity={0.7} onPress={handleLogout}>
                     <Ionicons name="log-out-outline" size={20} color="#c0392b" style={drawerStyles.menuIcon} />
                     <Text style={[drawerStyles.menuItemText, drawerStyles.logoutText]}>{tr('logout')}</Text>
                   </TouchableOpacity>
                 </View>
-              </SafeAreaView>
+              </View>
             </Animated.View>
           </Pressable>
         </Pressable>

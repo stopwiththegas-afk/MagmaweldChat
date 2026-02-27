@@ -17,7 +17,7 @@ export const makeVerifyStyles = (c: AppColors) =>
     },
     back: {
       paddingHorizontal: 28,
-      paddingTop: 20,
+      paddingTop: 48,
       paddingBottom: 8,
     },
     backText: {
