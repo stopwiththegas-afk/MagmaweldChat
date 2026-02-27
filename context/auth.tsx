@@ -2,10 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-import { User, userService } from '@/services/userService';
-
-const SESSION_KEY = 'db_session';
-const MOCK_CODE = '1234';
+import { api, clearToken, getToken, setToken } from '@/services/api';
+import { socketService } from '@/services/socketService';
+import { User } from '@/services/userService';
 
 interface AuthContextValue {
   user: User | null;
@@ -19,6 +18,8 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const PENDING_PHONE_KEY = 'pending_phone';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,12 +29,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const session = await AsyncStorage.getItem(SESSION_KEY);
-        if (session) {
-          const { userId } = JSON.parse(session);
-          const found = await userService.getById(userId);
-          if (found) setUser(found);
+        const token = await getToken();
+        if (token) {
+          const data = await api.get<{ user: User }>('/auth/me');
+          setUser(data.user);
+          socketService.connect(data.user.id);
         }
+        const stored = await AsyncStorage.getItem(PENDING_PHONE_KEY);
+        if (stored) setPendingPhone(stored);
+      } catch {
+        await clearToken();
       } finally {
         setIsLoading(false);
       }
@@ -41,37 +46,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sendCode = useCallback(async (phone: string) => {
-    // В будущем: вызов SMS-сервиса (Firebase / другой провайдер)
+    await api.post('/auth/send-code', { phone }, false);
     setPendingPhone(phone);
+    await AsyncStorage.setItem(PENDING_PHONE_KEY, phone);
   }, []);
 
   const verifyCode = useCallback(async (code: string): Promise<'existing' | 'new'> => {
-    if (code !== MOCK_CODE) throw new Error('err_wrong_code');
     if (!pendingPhone) throw new Error('err_no_phone');
-
-    const existing = await userService.getByPhone(pendingPhone);
-    if (existing) {
-      await AsyncStorage.setItem(SESSION_KEY, JSON.stringify({ userId: existing.id }));
-      setUser(existing);
-      return 'existing';
+    const data = await api.post<{ status: 'existing' | 'new'; token?: string; user?: User }>(
+      '/auth/verify-code',
+      { phone: pendingPhone, code },
+      false
+    );
+    if (data.status === 'existing' && data.token && data.user) {
+      await setToken(data.token);
+      setUser(data.user);
+      socketService.connect(data.user.id);
+      await AsyncStorage.removeItem(PENDING_PHONE_KEY);
+      setPendingPhone(null);
     }
-    return 'new';
+    return data.status;
   }, [pendingPhone]);
 
   const register = useCallback(async (username: string, displayName: string) => {
     if (!pendingPhone) throw new Error('err_no_phone');
-
-    const taken = await userService.getByUsername(username);
-    if (taken) throw new Error('err_username_taken');
-
-    const newUser = await userService.create({ phone: pendingPhone, username, displayName });
-    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify({ userId: newUser.id }));
-    setUser(newUser);
+    const data = await api.post<{ token: string; user: User }>(
+      '/auth/register',
+      { phone: pendingPhone, username, displayName },
+      false
+    );
+    await setToken(data.token);
+    setUser(data.user);
+    socketService.connect(data.user.id);
+    await AsyncStorage.removeItem(PENDING_PHONE_KEY);
     setPendingPhone(null);
   }, [pendingPhone]);
 
   const logout = useCallback(async () => {
-    await AsyncStorage.removeItem(SESSION_KEY);
+    socketService.disconnect();
+    await clearToken();
     setUser(null);
     router.replace('/(auth)/login');
   }, [router]);

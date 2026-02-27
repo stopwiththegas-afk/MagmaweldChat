@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   Animated,
   FlatList,
@@ -17,12 +17,11 @@ import { useDrawerAnimation } from '@/animation/useDrawerAnimation';
 import ChatListItem from '@/components/ChatListItem';
 import { useAuth } from '@/context/auth';
 import { useSettings } from '@/context/settings';
-import { mockChats } from '@/data/mockChats';
 import { useLayout } from '@/hooks/use-layout';
 import { useT } from '@/i18n';
+import { chatService, ChatSummary } from '@/services/chatService';
 import { makeDrawerStyles } from '@/styles/drawerStyles';
 import { makeHomeStyles } from '@/styles/homeStyles';
-import { Chat } from '@/types/chat';
 
 export default function HomeScreen() {
   const { scaleW, scaleH } = useLayout();
@@ -31,6 +30,12 @@ export default function HomeScreen() {
   const { colors } = useSettings();
   const tr = useT();
   const { visible: menuVisible, slideAnim, overlayAnim, open: openMenu, close: closeMenu } = useDrawerAnimation();
+
+  const [chats, setChats] = React.useState<ChatSummary[]>([]);
+
+  React.useEffect(() => {
+    chatService.getChats().then(setChats).catch(() => {});
+  }, []);
 
   const homeStyles = useMemo(() => makeHomeStyles(colors), [colors]);
   const drawerStyles = useMemo(() => makeDrawerStyles(colors), [colors]);
@@ -52,9 +57,9 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList<Chat>
+      <FlatList<ChatSummary>
         style={homeStyles.list}
-        data={mockChats}
+        data={chats}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ChatListItem chat={item} />}
         ItemSeparatorComponent={() => <View style={homeStyles.separator} />}

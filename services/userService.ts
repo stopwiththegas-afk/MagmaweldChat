@@ -1,6 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const USERS_KEY = 'db_users';
+import { api } from './api';
 
 export interface User {
   id: string;
@@ -13,77 +11,33 @@ export interface User {
   avatar?: string;
 }
 
-async function fetchUserIp(): Promise<string> {
+async function getMe(): Promise<User | null> {
   try {
-    const res = await fetch('https://api.ipify.org?format=json');
-    const data = await res.json();
-    return data.ip ?? '';
+    const data = await api.get<{ user: User }>('/auth/me');
+    return data.user;
   } catch {
-    return '';
+    return null;
   }
 }
 
-async function getAll(): Promise<User[]> {
-  const raw = await AsyncStorage.getItem(USERS_KEY);
-  if (!raw) return [];
-  return JSON.parse(raw) as User[];
+async function update(fields: Partial<Pick<User, 'displayName' | 'avatar'>>): Promise<User | null> {
+  try {
+    const data = await api.patch<{ user: User }>('/auth/me', fields);
+    return data.user;
+  } catch {
+    return null;
+  }
 }
 
-async function saveAll(users: User[]): Promise<void> {
-  await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-async function getByPhone(phone: string): Promise<User | null> {
-  const users = await getAll();
-  return users.find((u) => u.phone === phone) ?? null;
-}
-
-async function getById(id: string): Promise<User | null> {
-  const users = await getAll();
-  return users.find((u) => u.id === id) ?? null;
-}
-
-async function getByUsername(username: string): Promise<User | null> {
-  const users = await getAll();
-  return users.find((u) => u.username.toLowerCase() === username.toLowerCase()) ?? null;
-}
-
-async function create(data: Pick<User, 'phone' | 'username' | 'displayName'>): Promise<User> {
-  const users = await getAll();
-  const ip = await fetchUserIp();
-  const newUser: User = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    phone: data.phone,
-    username: data.username,
-    displayName: data.displayName,
-    role: 'user',
-    ip,
-    createdAt: new Date().toISOString(),
-  };
-  await saveAll([...users, newUser]);
-  return newUser;
-}
-
-async function update(id: string, fields: Partial<Omit<User, 'id' | 'createdAt'>>): Promise<User | null> {
-  const users = await getAll();
-  const idx = users.findIndex((u) => u.id === id);
-  if (idx === -1) return null;
-  users[idx] = { ...users[idx], ...fields };
-  await saveAll(users);
-  return users[idx];
-}
-
-async function remove(id: string): Promise<void> {
-  const users = await getAll();
-  await saveAll(users.filter((u) => u.id !== id));
+async function searchByUsername(query: string): Promise<Pick<User, 'id' | 'username' | 'displayName' | 'avatar'>[]> {
+  const data = await api.get<{ users: Pick<User, 'id' | 'username' | 'displayName' | 'avatar'>[] }>(
+    `/users/search?q=${encodeURIComponent(query)}`
+  );
+  return data.users;
 }
 
 export const userService = {
-  getAll,
-  getByPhone,
-  getById,
-  getByUsername,
-  create,
+  getMe,
   update,
-  remove,
+  searchByUsername,
 };

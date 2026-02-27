@@ -3,9 +3,8 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSettings } from '@/context/settings';
-import { Chat } from '@/types/chat';
 
-type Props = { chat: Chat };
+type Props = { chat: { id: string; name: string; lastMessage: string; timestamp: string; unreadCount: number } };
 
 export default function ChatListItem({ chat }: Props) {
   const { colors } = useSettings();
@@ -13,12 +12,19 @@ export default function ChatListItem({ chat }: Props) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const initial = chat.name.charAt(0).toUpperCase();
+  const timeLabel = (() => {
+    try {
+      return new Date(chat.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return chat.timestamp;
+    }
+  })();
 
   return (
     <TouchableOpacity
       style={styles.row}
       activeOpacity={0.7}
-      onPress={() => router.push(`/chat/${chat.id}`)}
+      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.id, name: chat.name } })}
     >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{initial}</Text>
@@ -27,7 +33,7 @@ export default function ChatListItem({ chat }: Props) {
       <View style={styles.body}>
         <View style={styles.topRow}>
           <Text style={styles.name} numberOfLines={1}>{chat.name}</Text>
-          <Text style={styles.time}>{chat.timestamp}</Text>
+          <Text style={styles.time}>{timeLabel}</Text>
         </View>
         <View style={styles.bottomRow}>
           <Text style={styles.lastMsg} numberOfLines={1}>{chat.lastMessage}</Text>
