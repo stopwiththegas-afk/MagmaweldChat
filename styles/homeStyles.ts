@@ -13,7 +13,7 @@ export const makeHomeStyles = (c: AppColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingTop: 32,
+      paddingVertical: 8,
     },
     hamburger: {
       padding: 6,

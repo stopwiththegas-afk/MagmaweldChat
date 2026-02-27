@@ -31,7 +31,7 @@ export const makeDrawerStyles = (c: AppColors) =>
     drawerHeader: {
       alignItems: 'flex-end',
       paddingHorizontal: 16,
-      paddingTop: 16,
+      paddingTop: 4,
       paddingBottom: 8,
     },
     menuItems: {
