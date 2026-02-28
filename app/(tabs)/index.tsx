@@ -88,7 +88,7 @@ export default function HomeScreen() {
       />
 
       <TouchableOpacity
-        style={homeStyles.fab}
+        style={[homeStyles.fab, { bottom: 24 + insets.bottom }]}
         onPress={handleOpenBotChat}
         activeOpacity={0.8}
         disabled={isCreating}
@@ -103,9 +103,6 @@ export default function HomeScreen() {
             <Animated.View style={[drawerStyles.drawer, { transform: [{ translateX: slideAnim }] }]}>
               <View style={[drawerStyles.drawerInner, { paddingTop: insets.top }]}>
                 <View style={drawerStyles.drawerHeader}>
-                  <TouchableOpacity onPress={() => closeMenu()} activeOpacity={0.7}>
-                    <Ionicons name="close" size={24} color={colors.closeIcon} />
-                  </TouchableOpacity>
                 </View>
 
                 <View style={drawerStyles.menuItems}>

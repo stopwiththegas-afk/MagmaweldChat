@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
@@ -11,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { useAuth } from '@/context/auth';
@@ -24,7 +25,15 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { colors } = useSettings();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +101,7 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
-      <SafeAreaView style={styles.flex}>
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={colors.accent} />
@@ -129,7 +138,7 @@ export default function ChatScreen() {
           />
         )}
 
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: 8 + (keyboardVisible ? 0 : insets.bottom) }]}>
           <TextInput
             ref={inputRef}
             style={styles.input}
@@ -166,7 +175,7 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 12,
-      paddingTop: 40,
+      paddingTop: 8,
       paddingBottom: 12,
       backgroundColor: c.background,
       borderBottomWidth: 1,
@@ -205,8 +214,7 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       flexDirection: 'row',
       alignItems: 'flex-end',
       paddingHorizontal: 12,
-      paddingVertical: 8,
-      paddingBottom: 44,
+      paddingTop: 8,
       borderTopWidth: 1,
       borderTopColor: c.divider,
       backgroundColor: c.background,

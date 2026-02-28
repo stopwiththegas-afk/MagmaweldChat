@@ -29,7 +29,7 @@ export const makeHomeStyles = (c: AppColors) =>
     },
     fab: {
       position: 'absolute',
-      bottom: 28,
+      bottom: 24,
       right: 24,
       width: 56,
       height: 56,
