@@ -8,6 +8,13 @@ set -euo pipefail
 
 DEPLOY_DIR="/var/www/MagmaweldChat"
 
+# Загрузка nvm (если установлен) — для доступа к node/npm
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+  export NVM_DIR="$HOME/.nvm"
+  # shellcheck source=/dev/null
+  . "$NVM_DIR/nvm.sh"
+fi
+
 echo "==> Обновление кода с GitHub..."
 cd "$DEPLOY_DIR"
 git pull
