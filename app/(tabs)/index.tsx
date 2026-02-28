@@ -35,10 +35,29 @@ export default function HomeScreen() {
   const { visible: menuVisible, slideAnim, overlayAnim, open: openMenu, close: closeMenu } = useDrawerAnimation();
 
   const [chats, setChats] = React.useState<ChatSummary[]>([]);
+  const [isCreating, setIsCreating] = React.useState(false);
 
-  React.useEffect(() => {
+  const loadChats = React.useCallback(() => {
     chatService.getChats().then(setChats).catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    loadChats();
+  }, [loadChats]);
+
+  const handleOpenBotChat = React.useCallback(async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const chatId = await chatService.openOrCreateChat('bot');
+      loadChats();
+      router.push(`/chat/${chatId}`);
+    } catch {
+      // ignore
+    } finally {
+      setIsCreating(false);
+    }
+  }, [isCreating, loadChats, router]);
 
   const homeStyles = useMemo(() => makeHomeStyles(colors), [colors]);
   const drawerStyles = useMemo(() => makeDrawerStyles(colors), [colors]);
@@ -67,6 +86,15 @@ export default function HomeScreen() {
         renderItem={({ item }) => <ChatListItem chat={item} />}
         ItemSeparatorComponent={() => <View style={homeStyles.separator} />}
       />
+
+      <TouchableOpacity
+        style={homeStyles.fab}
+        onPress={handleOpenBotChat}
+        activeOpacity={0.8}
+        disabled={isCreating}
+      >
+        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
+      </TouchableOpacity>
 
       <Modal transparent visible={menuVisible} animationType="none" onRequestClose={() => closeMenu()}>
         <Pressable style={drawerStyles.modalRoot} onPress={() => closeMenu()}>

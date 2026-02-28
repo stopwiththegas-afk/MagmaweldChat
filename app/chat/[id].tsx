@@ -44,7 +44,10 @@ export default function ChatScreen() {
 
     const unsubscribe = socketService.onNewMessage((msg) => {
       if (msg.chatId !== id) return;
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     });
 
