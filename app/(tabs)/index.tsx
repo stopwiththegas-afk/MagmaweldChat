@@ -22,7 +22,7 @@ import { useSettings } from '@/context/settings';
 import { useLayout } from '@/hooks/use-layout';
 import { useT } from '@/i18n';
 import { chatService, ChatSummary } from '@/services/chatService';
-import { makeDrawerStyles } from '@/styles/drawerStyles';
+import { makeDrawerStyles, MENU_WIDTH } from '@/styles/drawerStyles';
 import { makeHomeStyles } from '@/styles/homeStyles';
 
 export default function HomeScreen() {
@@ -96,11 +96,23 @@ export default function HomeScreen() {
         <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Modal transparent visible={menuVisible} animationType="none" onRequestClose={() => closeMenu()}>
+      <Modal transparent visible={menuVisible} animationType="none" onRequestClose={() => closeMenu()} statusBarTranslucent>
         <Pressable style={drawerStyles.modalRoot} onPress={() => closeMenu()}>
           <Animated.View style={[drawerStyles.overlay, { opacity: overlayAnim }]} />
           <Pressable>
             <Animated.View style={[drawerStyles.drawer, { transform: [{ translateX: slideAnim }] }]}>
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: MENU_WIDTH,
+                  height: insets.top,
+                  backgroundColor: colors.drawerBg,
+                  zIndex: 1,
+                }}
+                pointerEvents="none"
+              />
               <View style={[drawerStyles.drawerInner, { paddingTop: insets.top }]}>
                 <View style={drawerStyles.drawerHeader}>
                 </View>

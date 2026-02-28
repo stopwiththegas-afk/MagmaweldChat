@@ -6,6 +6,7 @@ import {
   FlatList,
   Keyboard,
   StyleSheet,
+  StatusBar,
   Text,
   TextInput,
   type TextInput as TextInputType,
@@ -24,7 +25,7 @@ export default function ChatScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const { user } = useAuth();
   const router = useRouter();
-  const { colors } = useSettings();
+  const { colors, theme } = useSettings();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -101,17 +102,28 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
-      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
+      <StatusBar
+        backgroundColor={colors.headerBg}
+        barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+      />
+      <SafeAreaView style={styles.flex} edges={['left', 'right']}>
+        <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
+          <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color={colors.accent} />
+            <Ionicons name="arrow-back" size={22} color={colors.accent} />
           </TouchableOpacity>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{(name ?? 'Ч').charAt(0).toUpperCase()}</Text>
           </View>
           <View style={styles.headerInfo}>
-            <Text style={styles.headerName}>{name ?? 'Чат'}</Text>
+            <Text style={styles.headerName} numberOfLines={1}>{name ?? 'Чат'}</Text>
           </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.headerActionBtn} activeOpacity={0.7}>
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
+        </View>
         </View>
 
         {isLoading ? (
@@ -171,29 +183,34 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
     container: { flex: 1, backgroundColor: c.background },
     flex: { flex: 1 },
     loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    headerWrapper: {
+      backgroundColor: c.headerBg,
+    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingTop: 8,
-      paddingBottom: 12,
-      backgroundColor: c.background,
-      borderBottomWidth: 1,
-      borderBottomColor: c.divider,
+      paddingHorizontal: 8,
+      paddingTop: 6,
+      paddingBottom: 10,
+      backgroundColor: c.headerBg,
     },
-    backBtn: { padding: 4, marginRight: 8 },
+    backBtn: { padding: 8, marginRight: 2 },
     avatar: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: 42,
+      height: 42,
+      borderRadius: 21,
       backgroundColor: c.accent,
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: c.divider,
       marginRight: 10,
     },
-    avatarText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+    avatarText: { color: '#fff', fontSize: 17, fontWeight: '700' },
     headerInfo: { flex: 1 },
-    headerName: { fontSize: 17, fontWeight: '700', color: c.text },
+    headerName: { fontSize: 16, fontWeight: '700', color: c.text },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    headerActionBtn: { padding: 8 },
     messageList: { padding: 12, paddingBottom: 8 },
     bubble: {
       maxWidth: '75%',
@@ -215,9 +232,7 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       alignItems: 'flex-end',
       paddingHorizontal: 12,
       paddingTop: 8,
-      borderTopWidth: 1,
-      borderTopColor: c.divider,
-      backgroundColor: c.background,
+      backgroundColor: c.headerBg,
     },
     input: {
       flex: 1,

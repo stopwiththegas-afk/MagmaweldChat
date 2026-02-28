@@ -14,7 +14,6 @@ export const makeProfileStyles = (c: AppColors) =>
       paddingHorizontal: 16,
       paddingTop: 32,
       paddingBottom: 12,
-      backgroundColor: c.headerBg,
     },
     backButton: {
       padding: 6,

@@ -13,7 +13,7 @@ export const lightColors = {
   subtext: '#7a9bbf',
   accent: '#1565c0',
   divider: '#e8f0f8',
-  headerBg: '#cadded',
+  headerBg: '#a8c8e0',
   sectionLabel: '#4a6fa5',
   // auth screens
   authBackground: '#f0f6fb',
@@ -36,7 +36,7 @@ export const darkColors = {
   subtext: '#7a9bbf',
   accent: '#4d8fcc',
   divider: '#243040',
-  headerBg: '#0f1624',
+  headerBg: '#152030',
   sectionLabel: '#7ab3d4',
   // auth screens
   authBackground: '#0d1520',
