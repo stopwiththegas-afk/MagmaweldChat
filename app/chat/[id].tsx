@@ -80,9 +80,12 @@ export default function ChatScreen() {
 
     socketService.sendMessage(id, text, (result) => {
       if (result?.ok && result.message) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === optimistic.id ? { ...result.message!, isOwn: true } : m))
-        );
+        setMessages((prev) => {
+          const withoutDup = prev.filter((m) => m.id !== result.message!.id);
+          return withoutDup.map((m) =>
+            m.id === optimistic.id ? { ...result.message!, isOwn: true } : m
+          );
+        });
       }
     });
   };
