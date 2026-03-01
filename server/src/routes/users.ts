@@ -30,8 +30,8 @@ router.get('/search', async (req: AuthRequest, res) => {
 
 /** GET /users/:id — get public profile of a user (for profile page) */
 router.get('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  if (id === 'search') return res.status(404).json({ error: 'not_found' });
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  if (!id || id === 'search') return res.status(404).json({ error: 'not_found' });
 
   const user = await prisma.user.findUnique({
     where: { id },
