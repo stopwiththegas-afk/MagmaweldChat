@@ -36,8 +36,20 @@ async function searchByUsername(query: string): Promise<Pick<User, 'id' | 'usern
   return data.users;
 }
 
+export type PublicProfile = Pick<User, 'id' | 'username' | 'displayName' | 'avatar'> & { createdAt: string };
+
+async function getProfileById(userId: string): Promise<PublicProfile | null> {
+  try {
+    const data = await api.get<{ user: PublicProfile }>(`/users/${userId}`);
+    return data.user;
+  } catch {
+    return null;
+  }
+}
+
 export const userService = {
   getMe,
   update,
   searchByUsername,
+  getProfileById,
 };
