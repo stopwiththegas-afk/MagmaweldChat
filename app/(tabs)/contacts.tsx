@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 import ChatListItem from '@/components/ChatListItem';
 import { useSettings } from '@/context/settings';
@@ -43,6 +44,12 @@ export default function ContactsScreen() {
   React.useEffect(() => {
     loadChats();
   }, [loadChats]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadChats();
+    }, [loadChats])
+  );
 
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

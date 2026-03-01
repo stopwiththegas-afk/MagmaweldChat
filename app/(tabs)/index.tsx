@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDrawerAnimation } from '@/animation/useDrawerAnimation';
@@ -43,6 +43,12 @@ export default function HomeScreen() {
   React.useEffect(() => {
     loadChats();
   }, [loadChats]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadChats();
+    }, [loadChats])
+  );
 
   const handleOpenContacts = React.useCallback(() => {
     router.push('/(tabs)/contacts');
