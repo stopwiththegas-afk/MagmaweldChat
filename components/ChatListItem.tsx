@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSettings } from '@/context/settings';
 
-type Props = { chat: { id: string; name: string; lastMessage: string; timestamp: string; unreadCount: number } };
+type Props = { chat: { id: string; name: string; username?: string; otherUserId?: string | null; avatar?: string | null; lastMessage: string; timestamp: string; unreadCount: number } };
 
 export default function ChatListItem({ chat }: Props) {
   const { colors } = useSettings();
@@ -24,7 +24,7 @@ export default function ChatListItem({ chat }: Props) {
     <TouchableOpacity
       style={styles.row}
       activeOpacity={0.7}
-      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.id, name: chat.name } })}
+      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.id, name: chat.name, username: chat.username ?? '', otherUserId: chat.otherUserId ?? '', avatar: chat.avatar ?? '' } })}
     >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{initial}</Text>

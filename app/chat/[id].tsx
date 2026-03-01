@@ -22,7 +22,7 @@ import { ApiMessage, chatService } from '@/services/chatService';
 import { socketService } from '@/services/socketService';
 
 export default function ChatScreen() {
-  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
+  const { id, name, username, otherUserId, avatar } = useLocalSearchParams<{ id: string; name?: string; username?: string; otherUserId?: string; avatar?: string }>();
   const { user } = useAuth();
   const router = useRouter();
   const { colors, theme } = useSettings();
@@ -112,12 +112,22 @@ export default function ChatScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color={colors.accent} />
           </TouchableOpacity>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(name ?? 'Ч').charAt(0).toUpperCase()}</Text>
-          </View>
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerName} numberOfLines={1}>{name ?? 'Чат'}</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.headerUserTouch}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (otherUserId && username) {
+                router.push({ pathname: '/user/[id]', params: { id: otherUserId, username, displayName: name ?? '', avatar: avatar ?? '' } });
+              }
+            }}
+          >
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{(name ?? 'Ч').charAt(0).toUpperCase()}</Text>
+            </View>
+            <View style={styles.headerInfo}>
+              <Text style={styles.headerName} numberOfLines={1}>{name ?? 'Чат'}</Text>
+            </View>
+          </TouchableOpacity>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.headerActionBtn} activeOpacity={0.7}>
               <Ionicons name="ellipsis-vertical" size={20} color={colors.accent} />
@@ -195,6 +205,11 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       backgroundColor: c.headerBg,
     },
     backBtn: { padding: 8, marginRight: 2 },
+    headerUserTouch: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
     avatar: {
       width: 42,
       height: 42,

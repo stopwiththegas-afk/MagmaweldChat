@@ -5,6 +5,7 @@ export const translations = {
   ru: {
     // drawer / common
     profile: 'Профиль',
+    contacts: 'Контакты',
     settings: 'Настройки',
     logout: 'Выйти',
     back: '← Назад',
@@ -28,6 +29,11 @@ export const translations = {
     field_username: 'Логин',
     field_phone: 'Телефон',
     field_member_since: 'В системе с',
+
+    // contacts
+    contacts_search_placeholder: 'Поиск по номеру, имени или логину',
+    write_btn: 'Написать',
+    contacts_empty_search: 'Ничего не найдено',
 
     // login
     login_title: 'Вход',
@@ -68,6 +74,7 @@ export const translations = {
   en: {
     // drawer / common
     profile: 'Profile',
+    contacts: 'Contacts',
     settings: 'Settings',
     logout: 'Log out',
     back: '← Back',
@@ -91,6 +98,11 @@ export const translations = {
     field_username: 'Username',
     field_phone: 'Phone',
     field_member_since: 'Member since',
+
+    // contacts
+    contacts_search_placeholder: 'Search by phone, name or username',
+    write_btn: 'Write',
+    contacts_empty_search: 'No results found',
 
     // login
     login_title: 'Login',
@@ -131,6 +143,7 @@ export const translations = {
   tr: {
     // drawer / common
     profile: 'Profil',
+    contacts: 'Kişiler',
     settings: 'Ayarlar',
     logout: 'Çıkış',
     back: '← Geri',
@@ -154,6 +167,11 @@ export const translations = {
     field_username: 'Kullanıcı adı',
     field_phone: 'Telefon',
     field_member_since: 'Üye tarihi',
+
+    // contacts
+    contacts_search_placeholder: 'Telefon, ad veya kullanıcı adıyla ara',
+    write_btn: 'Yaz',
+    contacts_empty_search: 'Sonuç bulunamadı',
 
     // login
     login_title: 'Giriş',

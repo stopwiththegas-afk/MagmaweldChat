@@ -28,6 +28,7 @@ router.get('/', async (req: AuthRequest, res) => {
       id: chat.id,
       name: other?.user.displayName ?? 'Чат',
       username: other?.user.username ?? '',
+      otherUserId: other?.user.id ?? null,
       avatar: other?.user.avatar ?? null,
       lastMessage: lastMsg?.text ?? '',
       timestamp: lastMsg?.createdAt.toISOString() ?? chat.createdAt.toISOString(),

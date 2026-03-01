@@ -14,6 +14,7 @@ export default function TabLayout() {
     <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen name="contacts" />
       <Tabs.Screen name="settings" />
     </Tabs>
   );

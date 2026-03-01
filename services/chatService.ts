@@ -4,6 +4,7 @@ export interface ChatSummary {
   id: string;
   name: string;
   username: string;
+  otherUserId: string | null;
   avatar: string | null;
   lastMessage: string;
   timestamp: string;

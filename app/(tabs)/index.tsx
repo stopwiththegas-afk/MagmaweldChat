@@ -64,6 +64,7 @@ export default function HomeScreen() {
 
   const handleLogout = () => closeMenu(logout);
   const handleProfile = () => closeMenu(() => router.push('/(tabs)/profile'));
+  const handleContacts = () => closeMenu(() => router.push('/(tabs)/contacts'));
   const handleSettings = () => closeMenu(() => router.push('/(tabs)/settings'));
 
   return (
@@ -121,6 +122,11 @@ export default function HomeScreen() {
                   <TouchableOpacity style={drawerStyles.menuItem} activeOpacity={0.7} onPress={handleProfile}>
                     <Ionicons name="person-outline" size={20} color={colors.accent} style={drawerStyles.menuIcon} />
                     <Text style={drawerStyles.menuItemText}>{tr('profile')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={drawerStyles.menuItem} activeOpacity={0.7} onPress={handleContacts}>
+                    <Ionicons name="people-outline" size={20} color={colors.accent} style={drawerStyles.menuIcon} />
+                    <Text style={drawerStyles.menuItemText}>{tr('contacts')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={drawerStyles.menuItem} activeOpacity={0.7} onPress={handleSettings}>
