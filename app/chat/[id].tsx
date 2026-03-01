@@ -198,7 +198,7 @@ export default function ChatScreen() {
                 disabled={actionLoading}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chatbubble-ellipses-outline" size={18} color="#c0392b"} style={styles.menuItemIcon} />
+                <Ionicons name="chatbubble-ellipses-outline" size={18} color="#c0392b" style={styles.menuItemIcon} />
                 <Text style={[styles.menuItemText, styles.menuItemDanger]}>{tr('delete_chat')}</Text>
               </TouchableOpacity>
             </Pressable>
