@@ -35,6 +35,10 @@ export const translations = {
     write_btn: 'Написать',
     contacts_empty_search: 'Ничего не найдено',
 
+    // chat menu
+    clear_history: 'Очистить историю',
+    delete_chat: 'Удалить чат',
+
     // login
     login_title: 'Вход',
     login_subtitle: 'Введите номер телефона',
@@ -104,6 +108,10 @@ export const translations = {
     write_btn: 'Write',
     contacts_empty_search: 'No results found',
 
+    // chat menu
+    clear_history: 'Clear history',
+    delete_chat: 'Delete chat',
+
     // login
     login_title: 'Login',
     login_subtitle: 'Enter your phone number',
@@ -172,6 +180,10 @@ export const translations = {
     contacts_search_placeholder: 'Telefon, ad veya kullanıcı adıyla ara',
     write_btn: 'Yaz',
     contacts_empty_search: 'Sonuç bulunamadı',
+
+    // chat menu
+    clear_history: 'Geçmişi temizle',
+    delete_chat: 'Sohbeti sil',
 
     // login
     login_title: 'Giriş',

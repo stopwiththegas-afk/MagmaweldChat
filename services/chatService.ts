@@ -44,9 +44,19 @@ async function sendMessage(chatId: string, text: string): Promise<ApiMessage> {
   return data.message;
 }
 
+async function clearChatHistory(chatId: string): Promise<void> {
+  await api.delete(`/chats/${chatId}/messages`);
+}
+
+async function deleteChat(chatId: string): Promise<void> {
+  await api.delete(`/chats/${chatId}`);
+}
+
 export const chatService = {
   getChats,
   openOrCreateChat,
   getMessages,
   sendMessage,
+  clearChatHistory,
+  deleteChat,
 };

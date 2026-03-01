@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  Modal,
+  Pressable,
   StyleSheet,
   StatusBar,
   Text,
@@ -18,6 +20,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { useAuth } from '@/context/auth';
 import { useSettings } from '@/context/settings';
+import { useT } from '@/i18n';
 import { ApiMessage, chatService } from '@/services/chatService';
 import { socketService } from '@/services/socketService';
 
@@ -26,6 +29,7 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { colors, theme } = useSettings();
+  const tr = useT();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -39,6 +43,8 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [canSend, setCanSend] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const inputTextRef = useRef('');
   const inputRef = useRef<TextInputType>(null);
   const listRef = useRef<FlatList>(null);
@@ -100,6 +106,34 @@ export default function ChatScreen() {
     });
   };
 
+  const handleClearHistory = async () => {
+    if (!id || actionLoading) return;
+    setActionLoading(true);
+    setMenuVisible(false);
+    try {
+      await chatService.clearChatHistory(id);
+      setMessages([]);
+    } catch {
+      // ignore
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!id || actionLoading) return;
+    setActionLoading(true);
+    setMenuVisible(false);
+    try {
+      await chatService.deleteChat(id);
+      router.replace('/(tabs)');
+    } catch {
+      // ignore
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <StatusBar
@@ -129,12 +163,47 @@ export default function ChatScreen() {
             </View>
           </TouchableOpacity>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerActionBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.headerActionBtn}
+              activeOpacity={0.7}
+              onPress={() => setMenuVisible(true)}
+            >
               <Ionicons name="ellipsis-vertical" size={20} color={colors.accent} />
             </TouchableOpacity>
           </View>
         </View>
         </View>
+
+        <Modal
+          transparent
+          visible={menuVisible}
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
+            <Pressable style={[styles.menuCard, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleClearHistory}
+                disabled={actionLoading}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={18} color={colors.text} style={styles.menuItemIcon} />
+                <Text style={[styles.menuItemText, { color: colors.text }]}>{tr('clear_history')}</Text>
+              </TouchableOpacity>
+              <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleDeleteChat}
+                disabled={actionLoading}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={18} color="#c0392b"} style={styles.menuItemIcon} />
+                <Text style={[styles.menuItemText, styles.menuItemDanger]}>{tr('delete_chat')}</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -226,6 +295,34 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
     headerName: { fontSize: 16, fontWeight: '700', color: c.text },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     headerActionBtn: { padding: 8 },
+    menuOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-end',
+      paddingTop: 56,
+      paddingRight: 12,
+    },
+    menuCard: {
+      borderRadius: 12,
+      paddingVertical: 6,
+      minWidth: 200,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+    },
+    menuItemIcon: { marginRight: 10 },
+    menuItemText: { fontSize: 15, fontWeight: '500' },
+    menuItemDanger: { color: '#c0392b' },
+    menuDivider: { height: 1, marginHorizontal: 10 },
     messageList: { padding: 12, paddingBottom: 8 },
     bubble: {
       maxWidth: '75%',

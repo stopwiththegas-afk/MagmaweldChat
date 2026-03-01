@@ -73,4 +73,16 @@ router.post('/', async (req: AuthRequest, res) => {
   res.status(201).json({ message: payload });
 });
 
+/** DELETE /chats/:chatId/messages — clear all messages in chat (only for participant) */
+router.delete('/', async (req: AuthRequest, res) => {
+  const chatId = req.params.chatId as string;
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+  });
+  if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
+
+  await prisma.message.deleteMany({ where: { chatId } });
+  res.status(204).send();
+});
+
 export default router;
