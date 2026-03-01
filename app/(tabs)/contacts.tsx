@@ -47,7 +47,9 @@ export default function ContactsScreen() {
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const q = searchQuery.trim().replace(/^@/, '');
-    if (q.length < 2) {
+    const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
+    const minLen = isPhoneLike ? 1 : 2;
+    if (q.length < minLen) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
@@ -68,7 +70,10 @@ export default function ContactsScreen() {
     };
   }, [searchQuery]);
 
-  const showSearchResults = searchQuery.trim().length >= 2;
+  const q = searchQuery.trim().replace(/^@/, '');
+  const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
+  const minLen = isPhoneLike ? 1 : 2;
+  const showSearchResults = q.length >= minLen;
 
   const handleUserPress = useCallback(
     async (user: SearchUser) => {

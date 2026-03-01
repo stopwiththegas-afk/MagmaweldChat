@@ -52,6 +52,8 @@ export default function UserProfileScreen() {
       })
     : '—';
 
+  const phone = profile?.phone ?? '—';
+
   const handleWrite = async () => {
     if (!username || loading) return;
     setLoading(true);
@@ -153,7 +155,7 @@ export default function UserProfileScreen() {
             </View>
             <View style={s.infoTextGroup}>
               <Text style={s.infoLabel}>{tr('field_phone')}</Text>
-              <Text style={s.infoValue}>—</Text>
+              <Text style={s.infoValue}>{phone}</Text>
             </View>
           </View>
 

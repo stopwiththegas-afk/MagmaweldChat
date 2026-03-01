@@ -36,7 +36,7 @@ async function searchByUsername(query: string): Promise<Pick<User, 'id' | 'usern
   return data.users;
 }
 
-export type PublicProfile = Pick<User, 'id' | 'username' | 'displayName' | 'avatar'> & { createdAt: string };
+export type PublicProfile = Pick<User, 'id' | 'username' | 'displayName' | 'avatar'> & { phone?: string; createdAt: string };
 
 async function getProfileById(userId: string): Promise<PublicProfile | null> {
   try {

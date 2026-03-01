@@ -7,10 +7,23 @@ const router = Router();
 
 router.use(requireAuth);
 
+/** Нормализация фрагмента номера для поиска: 893 → +793, 7931 → +7931 */
+function normalizePhoneQuery(q: string): string {
+  const digits = q.replace(/\D/g, '');
+  if (digits.startsWith('8') && digits.length >= 2) return '+7' + digits.slice(1);
+  if (digits.startsWith('7') && digits.length >= 2) return '+' + digits;
+  return q;
+}
+
 /** GET /users/search?q=... — find users by phone, displayName or username */
 router.get('/search', async (req: AuthRequest, res) => {
-  const q = ((req.query.q as string) ?? '').replace(/^@/, '').trim();
-  if (q.length < 2) { res.status(400).json({ error: 'err_query_too_short' }); return; }
+  const raw = (req.query.q as string) ?? '';
+  const q = raw.replace(/^@/, '').trim();
+  const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
+  const minLen = isPhoneLike ? 1 : 2;
+  if (q.length < minLen) { res.status(400).json({ error: 'err_query_too_short' }); return; }
+
+  const phoneSearch = isPhoneLike ? normalizePhoneQuery(q) : q;
 
   const users = await prisma.user.findMany({
     where: {
@@ -18,7 +31,7 @@ router.get('/search', async (req: AuthRequest, res) => {
       OR: [
         { username: { contains: q, mode: 'insensitive' } },
         { displayName: { contains: q, mode: 'insensitive' } },
-        { phone: { contains: q } },
+        { phone: { contains: phoneSearch } },
       ],
     },
     take: 20,
@@ -35,7 +48,7 @@ router.get('/:id', async (req: AuthRequest, res) => {
 
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, username: true, displayName: true, avatar: true, createdAt: true },
+    select: { id: true, username: true, displayName: true, avatar: true, phone: true, createdAt: true },
   });
 
   if (!user) return res.status(404).json({ error: 'err_user_not_found' });
@@ -46,6 +59,7 @@ router.get('/:id', async (req: AuthRequest, res) => {
       username: user.username,
       displayName: user.displayName,
       avatar: user.avatar,
+      phone: user.phone,
       createdAt: user.createdAt.toISOString(),
     },
   });

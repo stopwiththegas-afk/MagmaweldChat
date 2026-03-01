@@ -129,7 +129,7 @@ export default function ProfileScreen() {
             </View>
             <View style={s.infoTextGroup}>
               <Text style={s.infoLabel}>{tr('field_phone')}</Text>
-              <Text style={s.infoValue}>{user.phone}</Text>
+              <Text style={s.infoValue}>{user.phone ?? '—'}</Text>
             </View>
           </View>
 
