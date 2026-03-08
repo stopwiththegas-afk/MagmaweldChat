@@ -39,7 +39,7 @@ router.get('/', async (req: AuthRequest, res) => {
   res.json({ chats });
 });
 
-/** GET /chats/:chatId — chat info (e.g. whether current user is blocked by the other) */
+/** GET /chats/:chatId — chat info (blocked status in both directions) */
 router.get('/:chatId', async (req: AuthRequest, res) => {
   const chatId = req.params.chatId as string;
   const participant = await prisma.chatParticipant.findUnique({
@@ -53,7 +53,12 @@ router.get('/:chatId', async (req: AuthRequest, res) => {
         where: { blockerId_blockedId: { blockerId: other.userId, blockedId: req.userId! } },
       }))
     : false;
-  res.json({ chatId, blockedByOther });
+  const haveBlockedOther = other
+    ? !!(await prisma.blockedUser.findUnique({
+        where: { blockerId_blockedId: { blockerId: req.userId!, blockedId: other.userId } },
+      }))
+    : false;
+  res.json({ chatId, blockedByOther, haveBlockedOther });
 });
 
 /** POST /chats — open or create a direct chat with another user by username */
@@ -105,7 +110,7 @@ router.delete('/:chatId', async (req: AuthRequest, res) => {
   res.status(204).send();
 });
 
-/** POST /chats/:chatId/block — block the other participant (they can't send messages in this chat) */
+/** POST /chats/:chatId/block — block the other participant (neither can send in this chat until unblock) */
 router.post('/:chatId/block', async (req: AuthRequest, res) => {
   const chatId = req.params.chatId as string;
   const participant = await prisma.chatParticipant.findUnique({
@@ -121,6 +126,24 @@ router.post('/:chatId/block', async (req: AuthRequest, res) => {
     where: { blockerId_blockedId: { blockerId: req.userId!, blockedId: other.userId } },
     create: { blockerId: req.userId!, blockedId: other.userId },
     update: {},
+  });
+  res.status(204).send();
+});
+
+/** DELETE /chats/:chatId/block — unblock the other participant */
+router.delete('/:chatId/block', async (req: AuthRequest, res) => {
+  const chatId = req.params.chatId as string;
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+    include: { chat: { include: { participants: true } } },
+  });
+  if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
+
+  const other = participant.chat.participants.find((p) => p.userId !== req.userId);
+  if (!other) { res.status(400).json({ error: 'err_no_other_participant' }); return; }
+
+  await prisma.blockedUser.deleteMany({
+    where: { blockerId: req.userId!, blockedId: other.userId },
   });
   res.status(204).send();
 });

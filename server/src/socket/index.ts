@@ -67,6 +67,14 @@ export function setupSocket(httpServer: HttpServer): void {
         });
         if (blocked) { ack?.({ error: 'err_blocked' }); return; }
 
+        const iBlockedOther = await prisma.blockedUser.findFirst({
+          where: {
+            blockerId: userId,
+            blockedId: { in: otherParticipants.map((p) => p.userId) },
+          },
+        });
+        if (iBlockedOther) { ack?.({ error: 'err_blocked' }); return; }
+
         const message = await prisma.message.create({
           data: { chatId, senderId: userId, text: trimmedText },
           include: { sender: { select: { id: true, username: true, displayName: true, avatar: true } } },

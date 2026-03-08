@@ -52,13 +52,17 @@ async function deleteChat(chatId: string): Promise<void> {
   await api.delete(`/chats/${chatId}`);
 }
 
-async function getChatInfo(chatId: string): Promise<{ chatId: string; blockedByOther: boolean }> {
-  const data = await api.get<{ chatId: string; blockedByOther: boolean }>(`/chats/${chatId}`);
+async function getChatInfo(chatId: string): Promise<{ chatId: string; blockedByOther: boolean; haveBlockedOther: boolean }> {
+  const data = await api.get<{ chatId: string; blockedByOther: boolean; haveBlockedOther: boolean }>(`/chats/${chatId}`);
   return data;
 }
 
 async function blockUserInChat(chatId: string): Promise<void> {
   await api.post(`/chats/${chatId}/block`);
+}
+
+async function unblockUserInChat(chatId: string): Promise<void> {
+  await api.delete(`/chats/${chatId}/block`);
 }
 
 export const chatService = {
@@ -70,4 +74,5 @@ export const chatService = {
   deleteChat,
   getChatInfo,
   blockUserInChat,
+  unblockUserInChat,
 };
