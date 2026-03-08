@@ -15,7 +15,11 @@ router.get('/', async (req: AuthRequest, res) => {
       chat: {
         include: {
           participants: { include: { user: { select: { id: true, username: true, displayName: true, avatar: true } } } },
-          messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: { sender: { select: { displayName: true } } },
+          },
         },
       },
     },
@@ -25,6 +29,7 @@ router.get('/', async (req: AuthRequest, res) => {
     const isGroup = chat.name != null;
     const other = chat.participants.find((p) => p.userId !== req.userId);
     const lastMsg = chat.messages[0];
+    const lastMessageText = lastMsg?.text ?? '';
     return {
       id: chat.id,
       isGroup: !!isGroup,
@@ -32,7 +37,10 @@ router.get('/', async (req: AuthRequest, res) => {
       username: isGroup ? '' : (other?.user.username ?? ''),
       otherUserId: isGroup ? null : (other?.user.id ?? null),
       avatar: isGroup ? (chat.avatar ?? null) : (other?.user.avatar ?? null),
-      lastMessage: lastMsg?.text ?? '',
+      lastMessage: lastMessageText,
+      ...(isGroup && lastMsg && (lastMsg as { sender?: { displayName: string } }).sender && {
+        lastMessageSenderName: (lastMsg as { sender: { displayName: string } }).sender.displayName,
+      }),
       timestamp: lastMsg?.createdAt.toISOString() ?? chat.createdAt.toISOString(),
       unreadCount: 0,
       ...(isGroup && { participantCount: chat.participants.length }),

@@ -8,6 +8,7 @@ export interface ChatSummary {
   otherUserId: string | null;
   avatar: string | null;
   lastMessage: string;
+  lastMessageSenderName?: string | null;
   timestamp: string;
   unreadCount: number;
   participantCount?: number;

@@ -87,6 +87,7 @@ export const translations = {
     have_blocked_cannot_send: 'Вы заблокировали этого пользователя. Разблокируйте, чтобы писать.',
     deleted_user: 'Удалённый пользователь',
     cannot_send_to_deleted_user: 'Нельзя отправить сообщение удалённому пользователю',
+    no_messages: 'Нет сообщений',
 
     // login
     login_title: 'Вход',
@@ -223,6 +224,7 @@ export const translations = {
     have_blocked_cannot_send: 'You have blocked this user. Unblock to send messages.',
     deleted_user: 'Deleted user',
     cannot_send_to_deleted_user: 'Cannot send messages to a deleted user',
+    no_messages: 'No messages',
 
     // login
     login_title: 'Login',
@@ -359,6 +361,7 @@ export const translations = {
     have_blocked_cannot_send: 'Bu kullanıcıyı engellediniz. Mesaj göndermek için engeli kaldırın.',
     deleted_user: 'Silinmiş kullanıcı',
     cannot_send_to_deleted_user: 'Silinmiş kullanıcıya mesaj gönderilemez',
+    no_messages: 'Mesaj yok',
 
     // login
     login_title: 'Giriş',
