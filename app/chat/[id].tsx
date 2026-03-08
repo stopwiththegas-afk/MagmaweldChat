@@ -79,15 +79,17 @@ export default function ChatScreen() {
       .finally(() => setIsLoading(false));
 
     chatService.getChatInfo(id).then((info) => {
-      setIsBlockedByOther(info.blockedByOther);
-      setHaveBlockedOther(info.haveBlockedOther);
       if (info.isGroup) {
         setIsGroup(true);
+        setIsBlockedByOther(false);
+        setHaveBlockedOther(false);
         if (info.name != null) setGroupName(info.name);
         if (info.avatar != null) setGroupAvatar(info.avatar ?? '');
         setGroupAdminId(info.adminId ?? null);
         setGroupParticipantCount(info.participants?.length ?? null);
       } else {
+        setIsBlockedByOther(info.blockedByOther);
+        setHaveBlockedOther(info.haveBlockedOther);
         setGroupAdminId(null);
         setGroupParticipantCount(null);
       }
@@ -315,11 +317,11 @@ export default function ChatScreen() {
             </View>
             <View style={styles.headerInfo}>
               {isGroup && groupParticipantCount != null ? (
-                <View style={styles.headerNameRow}>
-                  <Text style={styles.headerNameMain} numberOfLines={1}>
+                <View style={styles.headerNameCol}>
+                  <Text style={styles.headerName} numberOfLines={1}>
                     {displayName}
                   </Text>
-                  <Text style={styles.headerNameCount} numberOfLines={1}>
+                  <Text style={styles.headerNameSub} numberOfLines={1}>
                     {groupParticipantCount} {groupMemberWord(groupParticipantCount)}
                   </Text>
                 </View>
@@ -549,10 +551,9 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
     },
     avatarText: { color: '#fff', fontSize: 17, fontWeight: '700' },
     headerInfo: { flex: 1 },
-    headerName: { fontSize: 16, fontWeight: '700', color: c.text },
-    headerNameRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap' },
-    headerNameMain: { fontSize: 16, fontWeight: '700', color: c.text, flexShrink: 1 },
-    headerNameCount: { fontSize: 13, fontWeight: '500', color: c.subtext, marginLeft: 18 },
+    headerName: { fontSize: 16, fontWeight: '600', color: c.text },
+    headerNameCol: { flex: 1 },
+    headerNameSub: { fontSize: 14, fontWeight: '400', color: c.subtext, marginTop: 1 },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     headerActionBtn: { padding: 8 },
     menuOverlay: {
