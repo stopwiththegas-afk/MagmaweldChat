@@ -44,6 +44,7 @@ export const translations = {
     clear_history: 'Очистить историю',
     delete_chat: 'Удалить чат',
     deleted_user: 'Удалённый пользователь',
+    cannot_send_to_deleted_user: 'Нельзя отправить сообщение удалённому пользователю',
 
     // login
     login_title: 'Вход',
@@ -131,6 +132,7 @@ export const translations = {
     clear_history: 'Clear history',
     delete_chat: 'Delete chat',
     deleted_user: 'Deleted user',
+    cannot_send_to_deleted_user: 'Cannot send messages to a deleted user',
 
     // login
     login_title: 'Login',
@@ -218,6 +220,7 @@ export const translations = {
     clear_history: 'Geçmişi temizle',
     delete_chat: 'Sohbeti sil',
     deleted_user: 'Silinmiş kullanıcı',
+    cannot_send_to_deleted_user: 'Silinmiş kullanıcıya mesaj gönderilemez',
 
     // login
     login_title: 'Giriş',

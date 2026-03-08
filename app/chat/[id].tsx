@@ -34,6 +34,9 @@ export default function ChatScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
+  /** Чат с удалённым пользователем — нет второго участника, поле ввода скрыто */
+  const isOtherUserDeleted = !otherUserId || otherUserId === '';
+
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
     const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
@@ -64,7 +67,6 @@ export default function ChatScreen() {
         if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     });
 
     return () => {
@@ -92,7 +94,6 @@ export default function ChatScreen() {
     inputTextRef.current = '';
     setCanSend(false);
     inputRef.current?.clear();
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
 
     socketService.sendMessage(id, text, (result) => {
       if (result?.ok && result.message) {
@@ -156,10 +157,14 @@ export default function ChatScreen() {
             }}
           >
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{(name ?? 'Ч').charAt(0).toUpperCase()}</Text>
+              <Text style={styles.avatarText}>
+                {(isOtherUserDeleted ? tr('deleted_user') : (name ?? 'Чат')).charAt(0).toUpperCase()}
+              </Text>
             </View>
             <View style={styles.headerInfo}>
-              <Text style={styles.headerName} numberOfLines={1}>{name ?? 'Чат'}</Text>
+              <Text style={styles.headerName} numberOfLines={1}>
+                {isOtherUserDeleted ? tr('deleted_user') : (name ?? 'Чат')}
+              </Text>
             </View>
           </TouchableOpacity>
           <View style={styles.headerActions}>
@@ -212,17 +217,12 @@ export default function ChatScreen() {
         ) : (
           <FlatList
             ref={listRef}
-            data={messages}
+            data={[...messages].reverse()}
+            inverted
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.messageList}
-            onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
             renderItem={({ item }) => (
               <View style={item.isOwn ? styles.bubbleWrapOwn : styles.bubbleWrapOther}>
-                {!item.isOwn && (
-                  <Text style={[styles.senderLabel, { color: colors.subtext }]}>
-                    {item.senderName ?? tr('deleted_user')}
-                  </Text>
-                )}
                 <View style={[styles.bubble, item.isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
                   <Text style={[styles.bubbleText, item.isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther]}>
                     {item.text}
@@ -236,29 +236,36 @@ export default function ChatScreen() {
           />
         )}
 
-        <View style={[styles.inputBar, { paddingBottom: 8 + (keyboardVisible ? 0 : insets.bottom) }]}>
-          <TextInput
-            ref={inputRef}
-            style={styles.input}
-            onChangeText={(t) => {
-              inputTextRef.current = t;
-              setCanSend(t.trim().length > 0);
-            }}
-            placeholder="Сообщение..."
-            placeholderTextColor={colors.subtext}
-            onSubmitEditing={sendMessage}
-            returnKeyType="send"
-            blurOnSubmit={false}
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
-            onPress={sendMessage}
-            activeOpacity={0.7}
-            disabled={!canSend}
-          >
-            <Ionicons name="send" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        {!isOtherUserDeleted && (
+          <View style={[styles.inputBar, { paddingBottom: 8 + (keyboardVisible ? 0 : insets.bottom) }]}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              onChangeText={(t) => {
+                inputTextRef.current = t;
+                setCanSend(t.trim().length > 0);
+              }}
+              placeholder="Сообщение..."
+              placeholderTextColor={colors.subtext}
+              onSubmitEditing={sendMessage}
+              returnKeyType="send"
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity
+              style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
+              onPress={sendMessage}
+              activeOpacity={0.7}
+              disabled={!canSend}
+            >
+              <Ionicons name="send" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+        {isOtherUserDeleted && (
+          <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
+            <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('cannot_send_to_deleted_user')}</Text>
+          </View>
+        )}
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
@@ -330,10 +337,9 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
     menuItemText: { fontSize: 15, fontWeight: '500' },
     menuItemDanger: { color: '#c0392b' },
     menuDivider: { height: 1, marginHorizontal: 10 },
-    messageList: { padding: 12, paddingBottom: 8 },
+    messageList: { padding: 12, paddingBottom: 8, flexGrow: 1 },
     bubbleWrapOwn: { marginBottom: 6, alignItems: 'flex-end' },
     bubbleWrapOther: { marginBottom: 6, alignItems: 'flex-start' },
-    senderLabel: { fontSize: 12, marginBottom: 2, marginLeft: 4 },
     bubble: {
       maxWidth: '75%',
       borderRadius: 16,
@@ -355,6 +361,13 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       paddingHorizontal: 12,
       paddingTop: 8,
       backgroundColor: c.headerBg,
+    },
+    inputBarDisabled: {
+      justifyContent: 'center',
+      paddingVertical: 12,
+    },
+    inputBarDisabledText: {
+      fontSize: 14,
     },
     input: {
       flex: 1,

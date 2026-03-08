@@ -2,16 +2,19 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useSettings } from '@/context/settings';
 
 type Props = { chat: { id: string; name: string; username?: string; otherUserId?: string | null; avatar?: string | null; lastMessage: string; timestamp: string; unreadCount: number } };
 
 export default function ChatListItem({ chat }: Props) {
   const { colors } = useSettings();
+  const tr = useT();
   const router = useRouter();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const initial = chat.name.charAt(0).toUpperCase();
+  const displayName = !chat.otherUserId || chat.otherUserId === '' ? tr('deleted_user') : chat.name;
+  const initial = displayName.charAt(0).toUpperCase();
   const timeLabel = (() => {
     try {
       return new Date(chat.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -24,7 +27,7 @@ export default function ChatListItem({ chat }: Props) {
     <TouchableOpacity
       style={styles.row}
       activeOpacity={0.7}
-      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.id, name: chat.name, username: chat.username ?? '', otherUserId: chat.otherUserId ?? '', avatar: chat.avatar ?? '' } })}
+      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.id, name: displayName, username: chat.username ?? '', otherUserId: chat.otherUserId ?? '', avatar: chat.avatar ?? '' } })}
     >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{initial}</Text>
@@ -32,7 +35,7 @@ export default function ChatListItem({ chat }: Props) {
 
       <View style={styles.body}>
         <View style={styles.topRow}>
-          <Text style={styles.name} numberOfLines={1}>{chat.name}</Text>
+          <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
           <Text style={styles.time}>{timeLabel}</Text>
         </View>
         <View style={styles.bottomRow}>
