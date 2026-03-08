@@ -471,7 +471,7 @@ export default function ChatScreen() {
           />
         )}
 
-        {(isGroup || (!isOtherUserDeleted && !isBlockedByOther && !haveBlockedOther)) && (
+        {(isGroup || (!isOtherUserDeleted && !isBlockedByOther)) && (
           <View style={[styles.inputBar, { paddingBottom: 8 + (keyboardVisible ? 0 : insets.bottom) }]}>
             <TextInput
               ref={inputRef}
@@ -504,11 +504,6 @@ export default function ChatScreen() {
         {!isGroup && isBlockedByOther && (
           <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
             <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('blocked_cannot_send')}</Text>
-          </View>
-        )}
-        {!isGroup && haveBlockedOther && (
-          <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
-            <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('have_blocked_cannot_send')}</Text>
           </View>
         )}
       </SafeAreaView>

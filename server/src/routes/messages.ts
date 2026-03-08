@@ -71,14 +71,6 @@ router.post('/', async (req: AuthRequest, res) => {
       },
     });
     if (blocked) { res.status(403).json({ error: 'err_blocked' }); return; }
-
-    const iBlockedOther = await prisma.blockedUser.findFirst({
-      where: {
-        blockerId: req.userId!,
-        blockedId: { in: otherParticipantIds.map((p) => p.userId) },
-      },
-    });
-    if (iBlockedOther) { res.status(403).json({ error: 'err_blocked' }); return; }
   }
 
   const message = await prisma.message.create({
