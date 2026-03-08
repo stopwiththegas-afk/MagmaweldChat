@@ -28,7 +28,9 @@ npx prisma migrate deploy
 npm run build
 
 echo "==> Перезапуск приложения..."
-pm2 restart magmaweld-api
+cd "$DEPLOY_DIR/server"
+pm2 delete magmaweld-api 2>/dev/null || true
+pm2 start ecosystem.config.js
 pm2 save
 
 echo ""
