@@ -85,8 +85,7 @@ router.post('/', async (req: AuthRequest, res) => {
   const body = req.body as { username?: string; name?: string; avatar?: string; participantIds?: string[] };
 
   if (body.name != null && Array.isArray(body.participantIds)) {
-    const name = String(body.name).trim();
-    if (name.length === 0) { res.status(400).json({ error: 'err_missing_fields' }); return; }
+    const name = String(body.name).trim() || 'Группа';
     const participantIds = [...new Set(body.participantIds)] as string[];
     if (!participantIds.every((id) => typeof id === 'string' && id.length > 0)) {
       res.status(400).json({ error: 'err_invalid_participants' });

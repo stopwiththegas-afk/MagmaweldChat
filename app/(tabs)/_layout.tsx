@@ -15,6 +15,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="profile" />
       <Tabs.Screen name="contacts" />
+      <Tabs.Screen name="create-group" />
       <Tabs.Screen name="settings" />
     </Tabs>
   );

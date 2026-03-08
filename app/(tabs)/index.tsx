@@ -35,6 +35,7 @@ export default function HomeScreen() {
   const { visible: menuVisible, slideAnim, overlayAnim, open: openMenu, close: closeMenu } = useDrawerAnimation();
 
   const [chats, setChats] = React.useState<ChatSummary[]>([]);
+  const [newChatMenuVisible, setNewChatMenuVisible] = React.useState(false);
 
   const loadChats = React.useCallback(() => {
     chatService.getChats().then(setChats).catch(() => {});
@@ -53,6 +54,17 @@ export default function HomeScreen() {
   const handleOpenContacts = React.useCallback(() => {
     router.push('/(tabs)/contacts');
   }, [router]);
+
+  const openNewChatMenu = React.useCallback(() => setNewChatMenuVisible(true), []);
+  const closeNewChatMenu = React.useCallback(() => setNewChatMenuVisible(false), []);
+  const handleCreateChat = React.useCallback(() => {
+    closeNewChatMenu();
+    router.push('/(tabs)/contacts');
+  }, [closeNewChatMenu, router]);
+  const handleCreateGroup = React.useCallback(() => {
+    closeNewChatMenu();
+    router.push('/(tabs)/create-group');
+  }, [closeNewChatMenu, router]);
 
   const homeStyles = useMemo(() => makeHomeStyles(colors), [colors]);
   const drawerStyles = useMemo(() => makeDrawerStyles(colors), [colors]);
@@ -85,11 +97,46 @@ export default function HomeScreen() {
 
       <TouchableOpacity
         style={[homeStyles.fab, { bottom: 24 + insets.bottom }]}
-        onPress={handleOpenContacts}
+        onPress={openNewChatMenu}
         activeOpacity={0.8}
       >
         <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
       </TouchableOpacity>
+
+      <Modal
+        transparent
+        visible={newChatMenuVisible}
+        animationType="fade"
+        onRequestClose={closeNewChatMenu}
+      >
+        <Pressable
+          style={[homeStyles.newChatMenuOverlay, { paddingBottom: 24 + 56 + 24 + insets.bottom }]}
+          onPress={closeNewChatMenu}
+        >
+          <Pressable
+            style={[homeStyles.newChatMenuCard, { backgroundColor: colors.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <TouchableOpacity
+              style={homeStyles.newChatMenuItem}
+              onPress={handleCreateGroup}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="people-outline" size={18} color={colors.text} style={homeStyles.newChatMenuItemIcon} />
+              <Text style={[homeStyles.newChatMenuItemText, { color: colors.text }]}>{tr('create_group')}</Text>
+            </TouchableOpacity>
+            <View style={[homeStyles.newChatMenuDivider, { backgroundColor: colors.divider }]} />
+            <TouchableOpacity
+              style={homeStyles.newChatMenuItem}
+              onPress={handleCreateChat}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chatbubble-outline" size={18} color={colors.text} style={homeStyles.newChatMenuItemIcon} />
+              <Text style={[homeStyles.newChatMenuItemText, { color: colors.text }]}>{tr('create_chat')}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal transparent visible={menuVisible} animationType="none" onRequestClose={() => closeMenu()} statusBarTranslucent>
         <Pressable style={drawerStyles.modalRoot} onPress={() => closeMenu()}>

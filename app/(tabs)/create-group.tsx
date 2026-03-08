@@ -167,7 +167,12 @@ export default function CreateGroupScreen() {
       });
     } catch (e: unknown) {
       setCreating(false);
-      const msg = e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : tr('err_generic');
+      const raw = e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : '';
+      const msg =
+        raw === 'err_missing_fields' ? tr('err_missing_fields') :
+        raw === 'err_group_min_3' ? tr('group_min_members_hint') :
+        raw === 'err_user_not_found' ? tr('contacts_empty_search') :
+        raw || tr('err_generic');
       Alert.alert(tr('create_group'), msg);
     }
   };

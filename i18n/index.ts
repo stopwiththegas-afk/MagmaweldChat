@@ -119,6 +119,7 @@ export const translations = {
     err_query_too_short: 'Запрос слишком короткий',
     err_query_too_long: 'Запрос слишком длинный',
     err_rate_limit: 'Слишком много запросов. Попробуйте позже.',
+    err_missing_fields: 'Заполните обязательные поля (например, название группы).',
     coming_soon: 'Скоро',
   },
 
@@ -239,6 +240,7 @@ export const translations = {
     err_query_too_short: 'Query too short',
     err_query_too_long: 'Query too long',
     err_rate_limit: 'Too many requests. Please try again later.',
+    err_missing_fields: 'Please fill in required fields (e.g. group name).',
     coming_soon: 'Coming soon',
   },
 
@@ -359,6 +361,7 @@ export const translations = {
     err_query_too_short: 'Sorgu çok kısa',
     err_query_too_long: 'Sorgu çok uzun',
     err_rate_limit: 'Çok fazla istek. Lütfen daha sonra tekrar deneyin.',
+    err_missing_fields: 'Lütfen zorunlu alanları doldurun (ör. grup adı).',
     coming_soon: 'Yakında',
   },
 } satisfies Record<Language, Record<string, string>>;

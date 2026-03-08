@@ -3,6 +3,13 @@ import path from 'path';
 
 // Load .env from server root (not dist), so PM2 works regardless of cwd
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET must be set and at least 32 characters long.');
+  process.exit(1);
+}
+
 import cors from 'cors';
 import express from 'express';
 import http from 'http';
