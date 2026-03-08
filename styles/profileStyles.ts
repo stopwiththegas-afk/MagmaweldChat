@@ -136,4 +136,20 @@ export const makeProfileStyles = (c: AppColors) =>
       color: c.accent,
       fontWeight: '700',
     },
+    deleteButton: {
+      marginHorizontal: 20,
+      marginTop: 24,
+      paddingVertical: 14,
+      borderRadius: 12,
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderColor: '#c62828',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#c62828',
+    },
   });

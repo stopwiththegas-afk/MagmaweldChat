@@ -9,6 +9,7 @@ export const translations = {
     settings: 'Настройки',
     logout: 'Выйти',
     back: '← Назад',
+    cancel: 'Отмена',
     err_generic: 'Произошла ошибка',
 
     // settings
@@ -30,6 +31,10 @@ export const translations = {
     field_phone: 'Телефон',
     field_member_since: 'В системе с',
 
+    delete_account: 'Удалить аккаунт',
+    delete_account_confirm_title: 'Удалить аккаунт?',
+    delete_account_confirm_message: 'Все данные профиля будут удалены безвозвратно. Вы уверены?',
+
     // contacts
     contacts_search_placeholder: 'Поиск по номеру, имени или логину',
     write_btn: 'Написать',
@@ -38,6 +43,7 @@ export const translations = {
     // chat menu
     clear_history: 'Очистить историю',
     delete_chat: 'Удалить чат',
+    deleted_user: 'Удалённый пользователь',
 
     // login
     login_title: 'Вход',
@@ -74,6 +80,13 @@ export const translations = {
     val_username_start_digit: 'Логин не может начинаться с цифры',
     val_name_short: 'Введите имя (минимум 2 символа)',
     err_username_taken: 'Этот логин уже занят',
+    err_invalid_username: 'Некорректный логин',
+    err_invalid_displayname: 'Некорректное имя',
+    err_invalid_avatar: 'Некорректная ссылка на аватар',
+    err_message_too_long: 'Сообщение слишком длинное',
+    err_query_too_short: 'Запрос слишком короткий',
+    err_query_too_long: 'Запрос слишком длинный',
+    err_rate_limit: 'Слишком много запросов. Попробуйте позже.',
   },
 
   en: {
@@ -83,6 +96,7 @@ export const translations = {
     settings: 'Settings',
     logout: 'Log out',
     back: '← Back',
+    cancel: 'Cancel',
     err_generic: 'An error occurred',
 
     // settings
@@ -104,6 +118,10 @@ export const translations = {
     field_phone: 'Phone',
     field_member_since: 'Member since',
 
+    delete_account: 'Delete account',
+    delete_account_confirm_title: 'Delete account?',
+    delete_account_confirm_message: 'All profile data will be permanently deleted. Are you sure?',
+
     // contacts
     contacts_search_placeholder: 'Search by phone, name or username',
     write_btn: 'Write',
@@ -112,6 +130,7 @@ export const translations = {
     // chat menu
     clear_history: 'Clear history',
     delete_chat: 'Delete chat',
+    deleted_user: 'Deleted user',
 
     // login
     login_title: 'Login',
@@ -148,6 +167,13 @@ export const translations = {
     val_username_start_digit: 'Username cannot start with a digit',
     val_name_short: 'Enter your name (min 2 chars)',
     err_username_taken: 'This username is already taken',
+    err_invalid_username: 'Invalid username',
+    err_invalid_displayname: 'Invalid display name',
+    err_invalid_avatar: 'Invalid avatar URL',
+    err_message_too_long: 'Message too long',
+    err_query_too_short: 'Query too short',
+    err_query_too_long: 'Query too long',
+    err_rate_limit: 'Too many requests. Please try again later.',
   },
 
   tr: {
@@ -157,6 +183,7 @@ export const translations = {
     settings: 'Ayarlar',
     logout: 'Çıkış',
     back: '← Geri',
+    cancel: 'İptal',
     err_generic: 'Bir hata oluştu',
 
     // settings
@@ -178,6 +205,10 @@ export const translations = {
     field_phone: 'Telefon',
     field_member_since: 'Üye tarihi',
 
+    delete_account: 'Hesabı sil',
+    delete_account_confirm_title: 'Hesap silinsin mi?',
+    delete_account_confirm_message: 'Tüm profil verileri kalıcı olarak silinecek. Emin misiniz?',
+
     // contacts
     contacts_search_placeholder: 'Telefon, ad veya kullanıcı adıyla ara',
     write_btn: 'Yaz',
@@ -186,6 +217,7 @@ export const translations = {
     // chat menu
     clear_history: 'Geçmişi temizle',
     delete_chat: 'Sohbeti sil',
+    deleted_user: 'Silinmiş kullanıcı',
 
     // login
     login_title: 'Giriş',
@@ -222,6 +254,13 @@ export const translations = {
     val_username_start_digit: 'Kullanıcı adı rakamla başlayamaz',
     val_name_short: 'Adınızı girin (en az 2 karakter)',
     err_username_taken: 'Bu kullanıcı adı zaten alınmış',
+    err_invalid_username: 'Geçersiz kullanıcı adı',
+    err_invalid_displayname: 'Geçersiz ad',
+    err_invalid_avatar: 'Geçersiz avatar bağlantısı',
+    err_message_too_long: 'Mesaj çok uzun',
+    err_query_too_short: 'Sorgu çok kısa',
+    err_query_too_long: 'Sorgu çok uzun',
+    err_rate_limit: 'Çok fazla istek. Lütfen daha sonra tekrar deneyin.',
   },
 } satisfies Record<Language, Record<string, string>>;
 

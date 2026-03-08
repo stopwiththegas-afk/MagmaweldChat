@@ -177,8 +177,17 @@ router.post('/register', async (req, res) => {
     ?? req.socket.remoteAddress
     ?? '';
 
+  const isFirstUser = (await prisma.user.count()) === 0;
+  const adminPhone = process.env.ADMIN_PHONE?.trim();
+  const isAdmin = isFirstUser || (!!adminPhone && phone === adminPhone);
   const user = await prisma.user.create({
-    data: { phone, username: cleanUsername, displayName: trimmedDisplayName, ip },
+    data: {
+      phone,
+      username: cleanUsername,
+      displayName: trimmedDisplayName,
+      ip,
+      role: isAdmin ? 'ADMIN' : 'USER',
+    },
   });
 
   sendAdminNotification(
@@ -233,6 +242,13 @@ router.patch('/me', requireAuth, async (req: AuthRequest, res) => {
 
   const user = await prisma.user.update({ where: { id: req.userId }, data });
   res.json({ user: serializeUser(user) });
+});
+
+/** DELETE /auth/me — delete account and all related data */
+router.delete('/me', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId;
+  await prisma.user.delete({ where: { id: userId } });
+  res.status(204).send();
 });
 
 function serializeUser(u: {

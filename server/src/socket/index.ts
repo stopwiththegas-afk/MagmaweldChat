@@ -4,6 +4,8 @@ import { Server, Socket } from 'socket.io';
 
 import { prisma } from '../lib/prisma.js';
 
+const MESSAGE_TEXT_MAX = 2000;
+
 interface SocketData {
   userId: string;
 }
@@ -42,6 +44,11 @@ export function setupSocket(httpServer: HttpServer): void {
       try {
         const { chatId, text } = data;
         if (!text?.trim()) { ack?.({ error: 'err_empty_message' }); return; }
+        const trimmedText = text.trim();
+        if (trimmedText.length > MESSAGE_TEXT_MAX) {
+          ack?.({ error: 'err_message_too_long' });
+          return;
+        }
 
         const participant = await prisma.chatParticipant.findUnique({
           where: { chatId_userId: { chatId, userId } },
@@ -49,7 +56,7 @@ export function setupSocket(httpServer: HttpServer): void {
         if (!participant) { ack?.({ error: 'Forbidden' }); return; }
 
         const message = await prisma.message.create({
-          data: { chatId, senderId: userId, text: text.trim() },
+          data: { chatId, senderId: userId, text: trimmedText },
           include: { sender: { select: { id: true, username: true, displayName: true, avatar: true } } },
         });
 
@@ -60,9 +67,9 @@ export function setupSocket(httpServer: HttpServer): void {
           chatId: message.chatId,
           text: message.text,
           senderId: message.senderId,
-          senderName: message.sender.displayName,
-          senderUsername: message.sender.username,
-          senderAvatar: message.sender.avatar ?? null,
+          senderName: message.sender?.displayName ?? null,
+          senderUsername: message.sender?.username ?? null,
+          senderAvatar: message.sender?.avatar ?? null,
           timestamp: message.createdAt.toISOString(),
         };
 

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/auth';
 import { useSettings } from '@/context/settings';
 import { useT } from '@/i18n';
+import { api } from '@/services/api';
 import { userService } from '@/services/userService';
 import { makeProfileStyles } from '@/styles/profileStyles';
 
@@ -26,6 +27,8 @@ export default function ProfileScreen() {
   const s = useMemo(() => makeProfileStyles(colors), [colors]);
 
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar ?? null);
+  const [deleting, setDeleting] = useState(false);
+  const { logout } = useAuth();
 
   const initials = user
     ? (user.displayName || user.username)
@@ -66,6 +69,31 @@ export default function ProfileScreen() {
         year: 'numeric',
       })
     : '—';
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      tr('delete_account_confirm_title'),
+      tr('delete_account_confirm_message'),
+      [
+        { text: tr('cancel'), style: 'cancel' },
+        {
+          text: tr('delete_account'),
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await api.delete('/auth/me');
+              await logout();
+            } catch {
+              Alert.alert(tr('err_generic'));
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (isLoading || !user) return null;
 
@@ -145,6 +173,15 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={s.deleteButton}
+          onPress={handleDeleteAccount}
+          disabled={deleting}
+          activeOpacity={0.7}
+        >
+          <Text style={s.deleteButtonText}>{tr('delete_account')}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

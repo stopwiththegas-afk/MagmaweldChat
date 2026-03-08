@@ -15,9 +15,9 @@ export interface ApiMessage {
   id: string;
   chatId: string;
   text: string;
-  senderId: string;
-  senderName: string;
-  senderUsername: string;
+  senderId: string | null;
+  senderName: string | null;
+  senderUsername: string | null;
   senderAvatar: string | null;
   timestamp: string;
   isOwn: boolean;

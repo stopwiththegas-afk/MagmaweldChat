@@ -81,9 +81,9 @@ export default function ChatScreen() {
       id: `tmp-${Date.now()}`,
       chatId: id,
       text,
-      senderId: user?.id ?? '',
-      senderName: user?.displayName ?? '',
-      senderUsername: user?.username ?? '',
+      senderId: user?.id ?? null,
+      senderName: user?.displayName ?? null,
+      senderUsername: user?.username ?? null,
       senderAvatar: user?.avatar ?? null,
       timestamp: new Date().toISOString(),
       isOwn: true,
@@ -217,13 +217,20 @@ export default function ChatScreen() {
             contentContainerStyle={styles.messageList}
             onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
             renderItem={({ item }) => (
-              <View style={[styles.bubble, item.isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-                <Text style={[styles.bubbleText, item.isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther]}>
-                  {item.text}
-                </Text>
-                <Text style={[styles.bubbleTime, item.isOwn ? styles.bubbleTimeOwn : styles.bubbleTimeOther]}>
-                  {new Date(item.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                </Text>
+              <View style={item.isOwn ? styles.bubbleWrapOwn : styles.bubbleWrapOther}>
+                {!item.isOwn && (
+                  <Text style={[styles.senderLabel, { color: colors.subtext }]}>
+                    {item.senderName ?? tr('deleted_user')}
+                  </Text>
+                )}
+                <View style={[styles.bubble, item.isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
+                  <Text style={[styles.bubbleText, item.isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther]}>
+                    {item.text}
+                  </Text>
+                  <Text style={[styles.bubbleTime, item.isOwn ? styles.bubbleTimeOwn : styles.bubbleTimeOther]}>
+                    {new Date(item.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
               </View>
             )}
           />
@@ -324,6 +331,9 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
     menuItemDanger: { color: '#c0392b' },
     menuDivider: { height: 1, marginHorizontal: 10 },
     messageList: { padding: 12, paddingBottom: 8 },
+    bubbleWrapOwn: { marginBottom: 6, alignItems: 'flex-end' },
+    bubbleWrapOther: { marginBottom: 6, alignItems: 'flex-start' },
+    senderLabel: { fontSize: 12, marginBottom: 2, marginLeft: 4 },
     bubble: {
       maxWidth: '75%',
       borderRadius: 16,

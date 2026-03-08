@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router({ mergeParams: true });
+const MESSAGE_TEXT_MAX = 2000;
 
 router.use(requireAuth);
 
@@ -31,9 +32,9 @@ router.get('/', async (req: AuthRequest, res) => {
       chatId: m.chatId,
       text: m.text,
       senderId: m.senderId,
-      senderName: m.sender.displayName,
-      senderUsername: m.sender.username,
-      senderAvatar: m.sender.avatar ?? null,
+      senderName: m.sender?.displayName ?? null,
+      senderUsername: m.sender?.username ?? null,
+      senderAvatar: m.sender?.avatar ?? null,
       timestamp: m.createdAt.toISOString(),
       isOwn: m.senderId === req.userId,
     })),
@@ -45,6 +46,11 @@ router.post('/', async (req: AuthRequest, res) => {
   const chatId = req.params.chatId as string;
   const { text } = req.body as { text?: string };
   if (!text?.trim()) { res.status(400).json({ error: 'err_empty_message' }); return; }
+  const trimmedText = text.trim();
+  if (trimmedText.length > MESSAGE_TEXT_MAX) {
+    res.status(400).json({ error: 'err_message_too_long' });
+    return;
+  }
 
   const participant = await prisma.chatParticipant.findUnique({
     where: { chatId_userId: { chatId, userId: req.userId! } },
@@ -52,7 +58,7 @@ router.post('/', async (req: AuthRequest, res) => {
   if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
 
   const message = await prisma.message.create({
-    data: { chatId, senderId: req.userId!, text: text.trim() },
+    data: { chatId, senderId: req.userId!, text: trimmedText },
     include: { sender: { select: { id: true, username: true, displayName: true, avatar: true } } },
   });
 
@@ -63,9 +69,9 @@ router.post('/', async (req: AuthRequest, res) => {
     chatId: message.chatId,
     text: message.text,
     senderId: message.senderId,
-    senderName: message.sender.displayName,
-    senderUsername: message.sender.username,
-    senderAvatar: message.sender.avatar ?? null,
+    senderName: message.sender?.displayName ?? null,
+    senderUsername: message.sender?.username ?? null,
+    senderAvatar: message.sender?.avatar ?? null,
     timestamp: message.createdAt.toISOString(),
     isOwn: true,
   };
