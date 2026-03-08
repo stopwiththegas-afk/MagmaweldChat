@@ -53,6 +53,14 @@ async function leaveGroup(chatId: string): Promise<void> {
   await api.post(`/chats/${chatId}/leave`);
 }
 
+async function addGroupParticipants(chatId: string, participantIds: string[]): Promise<void> {
+  await api.post(`/chats/${chatId}/participants`, { participantIds });
+}
+
+async function removeGroupParticipant(chatId: string, userId: string): Promise<void> {
+  await api.delete(`/chats/${chatId}/participants/${userId}`);
+}
+
 async function getMessages(chatId: string, before?: string): Promise<ApiMessage[]> {
   const query = before ? `?before=${encodeURIComponent(before)}` : '';
   const data = await api.get<{ messages: ApiMessage[] }>(`/chats/${chatId}/messages${query}`);
@@ -103,6 +111,8 @@ export const chatService = {
   openOrCreateChat,
   createGroup,
   leaveGroup,
+  addGroupParticipants,
+  removeGroupParticipant,
   getMessages,
   sendMessage,
   clearChatHistory,

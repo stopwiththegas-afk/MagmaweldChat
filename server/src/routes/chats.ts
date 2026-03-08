@@ -169,6 +169,65 @@ router.post('/:chatId/leave', async (req: AuthRequest, res) => {
   res.status(204).send();
 });
 
+/** POST /chats/:chatId/participants — add participants to group (admin only) */
+router.post('/:chatId/participants', async (req: AuthRequest, res) => {
+  const chatId = req.params.chatId as string;
+  const body = req.body as { participantIds?: string[] };
+  const participantIds = Array.isArray(body.participantIds) ? [...new Set(body.participantIds)] as string[] : [];
+  if (!participantIds.every((id) => typeof id === 'string' && id.length > 0)) {
+    res.status(400).json({ error: 'err_invalid_participants' });
+    return;
+  }
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+    include: { chat: true },
+  });
+  if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
+  if (participant.chat.name == null) { res.status(400).json({ error: 'err_not_a_group' }); return; }
+  if (participant.chat.adminId !== req.userId) { res.status(403).json({ error: 'err_only_admin_can_add' }); return; }
+  if (participantIds.includes(req.userId!)) { res.status(400).json({ error: 'err_self_in_participants' }); return; }
+
+  const existing = await prisma.chatParticipant.findMany({
+    where: { chatId, userId: { in: participantIds } },
+    select: { userId: true },
+  });
+  const existingIds = new Set(existing.map((p) => p.userId));
+  const toAdd = participantIds.filter((id) => !existingIds.has(id));
+  if (toAdd.length === 0) { res.status(204).send(); return; }
+
+  const users = await prisma.user.findMany({ where: { id: { in: toAdd } }, select: { id: true } });
+  const foundIds = new Set(users.map((u) => u.id));
+  const missing = toAdd.filter((id) => !foundIds.has(id));
+  if (missing.length > 0) { res.status(404).json({ error: 'err_user_not_found' }); return; }
+
+  await prisma.chatParticipant.createMany({
+    data: toAdd.map((userId) => ({ chatId, userId })),
+    skipDuplicates: true,
+  });
+  res.status(204).send();
+});
+
+/** DELETE /chats/:chatId/participants/:userId — remove participant from group (admin only, cannot remove self) */
+router.delete('/:chatId/participants/:userId', async (req: AuthRequest, res) => {
+  const chatId = req.params.chatId as string;
+  const targetUserId = req.params.userId as string;
+  if (targetUserId === req.userId) { res.status(400).json({ error: 'err_use_leave_to_leave' }); return; }
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+    include: { chat: true },
+  });
+  if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
+  if (participant.chat.name == null) { res.status(400).json({ error: 'err_not_a_group' }); return; }
+  if (participant.chat.adminId !== req.userId) { res.status(403).json({ error: 'err_only_admin_can_remove' }); return; }
+
+  await prisma.chatParticipant.deleteMany({
+    where: { chatId, userId: targetUserId },
+  });
+  const remaining = await prisma.chatParticipant.count({ where: { chatId } });
+  if (remaining === 0) await prisma.chat.delete({ where: { id: chatId } });
+  res.status(204).send();
+});
+
 /** DELETE /chats/:chatId — delete chat (only if participant) */
 router.delete('/:chatId', async (req: AuthRequest, res) => {
   const chatId = req.params.chatId as string;

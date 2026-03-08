@@ -13,7 +13,9 @@ export default function ChatListItem({ chat }: Props) {
   const router = useRouter();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const displayName = !chat.otherUserId || chat.otherUserId === '' ? tr('deleted_user') : chat.name;
+  const displayName = chat.isGroup
+    ? (chat.name || 'Группа')
+    : (!chat.otherUserId || chat.otherUserId === '' ? tr('deleted_user') : chat.name);
   const initial = displayName.charAt(0).toUpperCase();
   const timeLabel = (() => {
     try {
