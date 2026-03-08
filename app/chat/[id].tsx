@@ -48,6 +48,7 @@ export default function ChatScreen() {
   const [canSend, setCanSend] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
   const inputTextRef = useRef('');
   const inputRef = useRef<TextInputType>(null);
   const listRef = useRef<FlatList>(null);
@@ -60,6 +61,8 @@ export default function ChatScreen() {
       .then((msgs) => setMessages(msgs))
       .catch(() => {})
       .finally(() => setIsLoading(false));
+
+    chatService.getChatInfo(id).then((info) => setIsBlockedByOther(info.blockedByOther)).catch(() => {});
 
     const unsubscribe = socketService.onNewMessage((msg) => {
       if (msg.chatId !== id) return;
@@ -103,6 +106,9 @@ export default function ChatScreen() {
             m.id === optimistic.id ? { ...result.message!, isOwn: true } : m
           );
         });
+      } else if (result?.error === 'err_blocked') {
+        setIsBlockedByOther(true);
+        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       }
     });
   };
@@ -128,6 +134,20 @@ export default function ChatScreen() {
     try {
       await chatService.deleteChat(id);
       router.replace('/(tabs)');
+    } catch {
+      // ignore
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBlockUser = async () => {
+    if (!id || actionLoading || !otherUserId) return;
+    setActionLoading(true);
+    setMenuVisible(false);
+    try {
+      await chatService.blockUserInChat(id);
+      router.back();
     } catch {
       // ignore
     } finally {
@@ -196,6 +216,20 @@ export default function ChatScreen() {
                 <Ionicons name="trash-outline" size={18} color={colors.text} style={styles.menuItemIcon} />
                 <Text style={[styles.menuItemText, { color: colors.text }]}>{tr('clear_history')}</Text>
               </TouchableOpacity>
+              {otherUserId ? (
+                <>
+                  <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={handleBlockUser}
+                    disabled={actionLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="ban-outline" size={18} color={colors.text} style={styles.menuItemIcon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>{tr('block_user')}</Text>
+                  </TouchableOpacity>
+                </>
+              ) : null}
               <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
               <TouchableOpacity
                 style={styles.menuItem}
@@ -236,7 +270,7 @@ export default function ChatScreen() {
           />
         )}
 
-        {!isOtherUserDeleted && (
+        {!isOtherUserDeleted && !isBlockedByOther && (
           <View style={[styles.inputBar, { paddingBottom: 8 + (keyboardVisible ? 0 : insets.bottom) }]}>
             <TextInput
               ref={inputRef}
@@ -264,6 +298,11 @@ export default function ChatScreen() {
         {isOtherUserDeleted && (
           <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
             <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('cannot_send_to_deleted_user')}</Text>
+          </View>
+        )}
+        {isBlockedByOther && (
+          <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
+            <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('blocked_cannot_send')}</Text>
           </View>
         )}
       </SafeAreaView>

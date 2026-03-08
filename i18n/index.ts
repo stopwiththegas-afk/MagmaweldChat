@@ -43,6 +43,8 @@ export const translations = {
     // chat menu
     clear_history: 'Очистить историю',
     delete_chat: 'Удалить чат',
+    block_user: 'Заблокировать',
+    blocked_cannot_send: 'Вам заблокирована отправка сообщений в этот чат',
     deleted_user: 'Удалённый пользователь',
     cannot_send_to_deleted_user: 'Нельзя отправить сообщение удалённому пользователю',
 
@@ -131,6 +133,8 @@ export const translations = {
     // chat menu
     clear_history: 'Clear history',
     delete_chat: 'Delete chat',
+    block_user: 'Block user',
+    blocked_cannot_send: 'You are blocked from sending messages in this chat',
     deleted_user: 'Deleted user',
     cannot_send_to_deleted_user: 'Cannot send messages to a deleted user',
 
@@ -219,6 +223,8 @@ export const translations = {
     // chat menu
     clear_history: 'Geçmişi temizle',
     delete_chat: 'Sohbeti sil',
+    block_user: 'Engelle',
+    blocked_cannot_send: 'Bu sohbete mesaj göndermeniz engellendi',
     deleted_user: 'Silinmiş kullanıcı',
     cannot_send_to_deleted_user: 'Silinmiş kullanıcıya mesaj gönderilemez',
 

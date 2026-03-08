@@ -26,6 +26,8 @@ model User {
   sentMessages     Message[]
   participations   ChatParticipant[]
   verifications    PhoneVerification[]
+  blockedUsers     BlockedUser[]      @relation("BlockedBy")
+  blockedBy        BlockedUser[]      @relation("Blocked")
 }
 
 model DailyCode {
@@ -79,4 +81,15 @@ model Message {
   sender User? @relation(fields: [senderId], references: [id], onDelete: SetNull)
 
   @@index([chatId, createdAt])
+}
+
+model BlockedUser {
+  blockerId String
+  blockedId String
+
+  blocker User @relation("BlockedBy", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
 }

@@ -57,6 +57,18 @@ router.post('/', async (req: AuthRequest, res) => {
   });
   if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
 
+  const otherParticipantIds = await prisma.chatParticipant.findMany({
+    where: { chatId, userId: { not: req.userId! } },
+    select: { userId: true },
+  });
+  const blocked = await prisma.blockedUser.findFirst({
+    where: {
+      blockedId: req.userId!,
+      blockerId: { in: otherParticipantIds.map((p) => p.userId) },
+    },
+  });
+  if (blocked) { res.status(403).json({ error: 'err_blocked' }); return; }
+
   const message = await prisma.message.create({
     data: { chatId, senderId: req.userId!, text: trimmedText },
     include: { sender: { select: { id: true, username: true, displayName: true, avatar: true } } },
