@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  Platform,
+  SectionList,
   Text,
   TextInput,
   TouchableOpacity,
@@ -13,16 +15,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
-import ChatListItem from '@/components/ChatListItem';
 import { useSettings } from '@/context/settings';
 import { useT } from '@/i18n';
 import { chatService, ChatSummary } from '@/services/chatService';
-import { userService } from '@/services/userService';
+import {
+  filterDeviceContacts,
+  getDeviceContacts,
+  normalizePhone,
+  requestPermission,
+  type DeviceContact,
+} from '@/services/deviceContactsService';
+import { userService, type LookupUser } from '@/services/userService';
 import { makeContactsStyles } from '@/styles/contactsStyles';
 
 type SearchUser = { id: string; username: string; displayName: string; avatar: string | null };
 
 const DEBOUNCE_MS = 350;
+
+/** 1-1 chat converted to contact (other user) for profile navigation */
+type ContactFromChat = { id: string; username: string; displayName: string; avatar: string | null };
+
+type SearchSectionItem = SearchUser | { type: 'device'; contact: DeviceContact; user?: LookupUser };
+
+function isNative(): boolean {
+  return Platform.OS === 'ios' || Platform.OS === 'android';
+}
 
 export default function ContactsScreen() {
   const router = useRouter();
@@ -30,42 +47,96 @@ export default function ContactsScreen() {
   const tr = useT();
   const styles = useMemo(() => makeContactsStyles(colors), [colors]);
 
-  const [chats, setChats] = useState<ChatSummary[]>([]);
+  const [contacts, setContacts] = useState<ContactFromChat[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [openingChat, setOpeningChat] = useState(false);
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [deviceContacts, setDeviceContacts] = useState<DeviceContact[]>([]);
+  const [devicePermissionStatus, setDevicePermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [deviceContactsLoading, setDeviceContactsLoading] = useState(false);
+  const [lookupMap, setLookupMap] = useState<Map<string, LookupUser>>(new Map());
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadChats = useCallback(() => {
-    chatService.getChats().then(setChats).catch(() => {});
+  const loadContacts = useCallback(() => {
+    chatService.getChats().then((list) => {
+      const fromChats: ContactFromChat[] = list
+        .filter((c): c is ChatSummary & { otherUserId: string } => !c.isGroup && !!c.otherUserId && c.otherUserId !== '')
+        .map((c) => ({
+          id: c.otherUserId!,
+          username: c.username ?? '',
+          displayName: c.name ?? '',
+          avatar: c.avatar ?? null,
+        }));
+      setContacts(fromChats);
+    }).catch(() => {});
+  }, []);
+
+  const loadDeviceContacts = useCallback(async () => {
+    if (!isNative()) return;
+    const status = await requestPermission();
+    setDevicePermissionStatus(status);
+    if (status !== 'granted') return;
+    setDeviceContactsLoading(true);
+    try {
+      const list = await getDeviceContacts();
+      setDeviceContacts(list);
+    } finally {
+      setDeviceContactsLoading(false);
+    }
   }, []);
 
   React.useEffect(() => {
-    loadChats();
-  }, [loadChats]);
+    loadContacts();
+  }, [loadContacts]);
 
   useFocusEffect(
     useCallback(() => {
-      loadChats();
-    }, [loadChats])
+      loadContacts();
+      if (isNative() && devicePermissionStatus === 'undetermined') {
+        loadDeviceContacts();
+      }
+    }, [loadContacts, loadDeviceContacts, devicePermissionStatus])
   );
+
+  const q = searchQuery.trim().replace(/^@/, '');
+  const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
+  const minLen = isPhoneLike ? 1 : 2;
+  const showSearchResults = q.length >= minLen;
 
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    const q = searchQuery.trim().replace(/^@/, '');
-    const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
-    const minLen = isPhoneLike ? 1 : 2;
     if (q.length < minLen) {
       setSearchResults([]);
       setSearchLoading(false);
+      setLookupMap(new Map());
       return;
     }
     setSearchLoading(true);
     debounceRef.current = setTimeout(() => {
       userService
         .searchByUsername(q)
-        .then(setSearchResults)
+        .then((users) => {
+          setSearchResults(users);
+          if (isNative() && deviceContacts.length > 0 && devicePermissionStatus === 'granted') {
+            const filtered = filterDeviceContacts(deviceContacts, q);
+            const phones = new Set<string>();
+            for (const c of filtered) {
+              for (const p of c.phones) phones.add(normalizePhone(p));
+            }
+            const phoneList = [...phones].slice(0, 100);
+            if (phoneList.length > 0) {
+              userService.lookupByPhones(phoneList).then((lookupUsers) => {
+                const map = new Map<string, LookupUser>();
+                for (const u of lookupUsers) map.set(u.phone, u);
+                setLookupMap(map);
+              }).catch(() => setLookupMap(new Map()));
+            } else {
+              setLookupMap(new Map());
+            }
+          } else {
+            setLookupMap(new Map());
+          }
+        })
         .catch(() => setSearchResults([]))
         .finally(() => {
           setSearchLoading(false);
@@ -75,39 +146,64 @@ export default function ContactsScreen() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchQuery]);
+  }, [searchQuery, deviceContacts, devicePermissionStatus]);
 
-  const q = searchQuery.trim().replace(/^@/, '');
-  const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
-  const minLen = isPhoneLike ? 1 : 2;
-  const showSearchResults = q.length >= minLen;
-
-  const handleUserPress = useCallback(
-    async (user: SearchUser) => {
-      if (openingChat) return;
-      setOpeningChat(true);
-      try {
-        const chatId = await chatService.openOrCreateChat(user.username);
-        loadChats();
-        router.push({ pathname: '/chat/[id]', params: { id: chatId, name: user.displayName || user.username, username: user.username, otherUserId: user.id, avatar: user.avatar ?? '' } });
-      } catch {
-        // ignore
-      } finally {
-        setOpeningChat(false);
+  const sections = useMemo((): { title: string; data: SearchSectionItem[] }[] => {
+    if (!showSearchResults) return [];
+    const inApp: SearchSectionItem[] = searchResults.map((u) => u);
+    const deviceSection: SearchSectionItem[] = [];
+    if (isNative() && devicePermissionStatus === 'granted' && deviceContacts.length > 0) {
+      const filtered = filterDeviceContacts(deviceContacts, q);
+      const addedUserIds = new Set(searchResults.map((u) => u.id));
+      for (const contact of filtered) {
+        let matchedUser: LookupUser | undefined;
+        for (const phone of contact.phones) {
+          const u = lookupMap.get(normalizePhone(phone));
+          if (u && !addedUserIds.has(u.id)) {
+            matchedUser = u;
+            addedUserIds.add(u.id);
+            break;
+          }
+        }
+        if (matchedUser) {
+          deviceSection.push({
+            type: 'device',
+            contact,
+            user: matchedUser,
+          });
+        } else {
+          deviceSection.push({ type: 'device', contact });
+        }
       }
+    }
+    const result: { title: string; data: SearchSectionItem[] }[] = [];
+    if (inApp.length > 0) {
+      result.push({ title: tr('contacts_section_in_app'), data: inApp });
+    }
+    if (deviceSection.length > 0) {
+      result.push({ title: tr('contacts_section_device'), data: deviceSection });
+    }
+    return result;
+  }, [showSearchResults, searchResults, q, deviceContacts, devicePermissionStatus, lookupMap, tr]);
+
+  const handleOpenProfile = useCallback(
+    (user: { id: string; username: string; displayName: string; avatar: string | null }) => {
+      router.push({
+        pathname: '/user/[id]',
+        params: { id: user.id, username: user.username, displayName: user.displayName || user.username, avatar: user.avatar ?? '' },
+      });
     },
-    [openingChat, loadChats, router]
+    [router]
   );
 
-  const renderSearchItem = useCallback(
-    ({ item }: { item: SearchUser }) => {
+  const renderSearchUserRow = useCallback(
+    (item: SearchUser) => {
       const initial = (item.displayName || item.username).charAt(0).toUpperCase();
       return (
         <TouchableOpacity
           style={styles.userRow}
           activeOpacity={0.7}
-          onPress={() => handleUserPress(item)}
-          disabled={openingChat}
+          onPress={() => handleOpenProfile(item)}
         >
           {item.avatar ? (
             <Image source={{ uri: item.avatar }} style={styles.userAvatarImage} />
@@ -123,8 +219,91 @@ export default function ContactsScreen() {
         </TouchableOpacity>
       );
     },
-    [styles, handleUserPress, openingChat]
+    [styles, handleOpenProfile]
   );
+
+  const renderDeviceRow = useCallback(
+    (item: { type: 'device'; contact: DeviceContact; user?: LookupUser }) => {
+      const { contact, user } = item;
+      if (user) {
+        return renderSearchUserRow({
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatar: user.avatar ?? null,
+        });
+      }
+      const initial = contact.name.charAt(0).toUpperCase() || '?';
+      return (
+        <View style={styles.userRow}>
+          <View style={styles.userAvatar}>
+            <Text style={styles.userAvatarText}>{initial}</Text>
+          </View>
+          <View style={styles.userBody}>
+            <Text style={styles.userName} numberOfLines={1}>{contact.name}</Text>
+            <Text style={[styles.userUsername, { color: colors.subtext }]} numberOfLines={1}>
+              {tr('contacts_not_in_app')}
+            </Text>
+          </View>
+        </View>
+      );
+    },
+    [styles, colors.subtext, tr, renderSearchUserRow]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: SearchSectionItem }) => {
+      if ('type' in item && item.type === 'device') {
+        return renderDeviceRow(item);
+      }
+      return renderSearchUserRow(item as SearchUser);
+    },
+    [renderSearchUserRow, renderDeviceRow]
+  );
+
+  const keyExtractor = useCallback((item: SearchSectionItem, index: number) => {
+    if ('type' in item && item.type === 'device') {
+      return item.user ? item.user.id : `device-${item.contact.id}-${index}`;
+    }
+    return (item as SearchUser).id;
+  }, []);
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: { title: string } }) => (
+      <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+        <Text style={[styles.sectionHeaderText, { color: colors.subtext }]}>{section.title}</Text>
+      </View>
+    ),
+    [styles, colors]
+  );
+
+  const renderContactItem = useCallback(
+    ({ item }: { item: ContactFromChat }) => {
+      const initial = (item.displayName || item.username).charAt(0).toUpperCase();
+      return (
+        <TouchableOpacity
+          style={styles.userRow}
+          activeOpacity={0.7}
+          onPress={() => handleOpenProfile(item)}
+        >
+          {item.avatar ? (
+            <Image source={{ uri: item.avatar }} style={styles.userAvatarImage} />
+          ) : (
+            <View style={styles.userAvatar}>
+              <Text style={styles.userAvatarText}>{initial}</Text>
+            </View>
+          )}
+          <View style={styles.userBody}>
+            <Text style={styles.userName} numberOfLines={1}>{item.displayName || item.username}</Text>
+            <Text style={styles.userUsername} numberOfLines={1}>@{item.username}</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [styles, handleOpenProfile]
+  );
+
+  const separator = useMemo(() => <View style={[styles.separator, { marginLeft: 16 + 48 + 12 }]} />, [styles]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -147,31 +326,48 @@ export default function ContactsScreen() {
         />
       </View>
 
+      {isNative() && devicePermissionStatus === 'undetermined' && (
+        <TouchableOpacity
+          style={{ padding: 12, marginHorizontal: 16, marginBottom: 8, backgroundColor: colors.accent + '20', borderRadius: 8 }}
+          onPress={loadDeviceContacts}
+          disabled={deviceContactsLoading}
+        >
+          <Text style={{ color: colors.accent, textAlign: 'center', fontSize: 14 }}>{tr('contacts_permission_message')}</Text>
+          {deviceContactsLoading && <ActivityIndicator color={colors.accent} size="small" style={{ marginTop: 6 }} />}
+        </TouchableOpacity>
+      )}
+
       {showSearchResults ? (
         <>
           {searchLoading ? (
             <View style={{ paddingVertical: 24, alignItems: 'center' }}>
               <ActivityIndicator color={colors.accent} />
             </View>
+          ) : sections.length === 0 ? (
+            <Text style={styles.emptyText}>{tr('contacts_empty_search')}</Text>
           ) : (
-            <FlatList
-              data={searchResults}
-              keyExtractor={(item) => item.id}
-              renderItem={renderSearchItem}
-              ItemSeparatorComponent={() => <View style={[styles.separator, { marginLeft: 16 + 48 + 12 }]} />}
-              ListEmptyComponent={<Text style={styles.emptyText}>{tr('contacts_empty_search')}</Text>}
+            <SectionList
+              sections={sections}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              renderSectionHeader={renderSectionHeader}
+              ItemSeparatorComponent={() => separator}
+              ListEmptyComponent={null}
+              stickySectionHeadersEnabled={false}
             />
           )}
         </>
       ) : (
         <FlatList
           style={styles.list}
-          data={chats}
+          data={contacts}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ChatListItem chat={item} />}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          renderItem={renderContactItem}
+          ItemSeparatorComponent={() => separator}
+          ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.subtext }]}>{tr('contacts_empty_search')}</Text>}
         />
       )}
+
     </SafeAreaView>
   );
 }

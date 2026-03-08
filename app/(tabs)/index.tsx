@@ -38,7 +38,14 @@ export default function HomeScreen() {
   const [newChatMenuVisible, setNewChatMenuVisible] = React.useState(false);
 
   const loadChats = React.useCallback(() => {
-    chatService.getChats().then(setChats).catch(() => {});
+    chatService.getChats().then((list) => {
+      const sorted = [...list].sort((a, b) => {
+        if (a.isGroup && !b.isGroup) return -1;
+        if (!a.isGroup && b.isGroup) return 1;
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      });
+      setChats(sorted);
+    }).catch(() => {});
   }, []);
 
   React.useEffect(() => {
@@ -92,7 +99,6 @@ export default function HomeScreen() {
         data={chats}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ChatListItem chat={item} />}
-        ItemSeparatorComponent={() => <View style={homeStyles.separator} />}
       />
 
       <TouchableOpacity

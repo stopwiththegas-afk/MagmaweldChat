@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -45,6 +46,10 @@ export default function GroupInfoScreen() {
   const [addLoading, setAddLoading] = useState(false);
   const [removeLoadingId, setRemoveLoadingId] = useState<string | null>(null);
   const [deleteGroupLoading, setDeleteGroupLoading] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editAvatarUri, setEditAvatarUri] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchInfo = useCallback(() => {
@@ -116,6 +121,58 @@ export default function GroupInfoScreen() {
     setSearchResults([]);
     setSelectedToAdd([]);
   };
+
+  const openEditModal = useCallback(() => {
+    if (!info) return;
+    setEditName(info.name ?? '');
+    setEditAvatarUri(info.avatar ?? null);
+    setEditModalVisible(true);
+  }, [info]);
+
+  const closeEditModal = useCallback(() => {
+    setEditModalVisible(false);
+    setEditName('');
+    setEditAvatarUri(null);
+  }, []);
+
+  const handleChangeGroupPhoto = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(tr('no_access'), tr('gallery_permission'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setEditAvatarUri(result.assets[0].uri);
+    }
+  }, [tr]);
+
+  const handleSaveGroupEdit = useCallback(async () => {
+    if (!id) return;
+    const name = editName.trim() || tr('placeholder_group_name');
+    setEditSaving(true);
+    try {
+      await chatService.updateGroup(id, { name, avatar: editAvatarUri });
+      setInfo((prev) =>
+        prev ? { ...prev, name, avatar: editAvatarUri } : null
+      );
+      closeEditModal();
+    } catch (e: unknown) {
+      const raw = e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : '';
+      const msg =
+        raw === 'err_only_admin_can_edit_group' ? tr('err_only_admin_can_edit_group') :
+        raw === 'err_invalid_avatar' ? tr('err_invalid_avatar') :
+        raw || tr('err_generic');
+      Alert.alert(tr('edit_group'), msg);
+    } finally {
+      setEditSaving(false);
+    }
+  }, [id, editName, editAvatarUri, closeEditModal, tr]);
 
   const toggleSelected = useCallback((u: SearchUser) => {
     setSelectedToAdd((prev) => {
@@ -287,6 +344,12 @@ export default function GroupInfoScreen() {
               )}
             </View>
           </View>
+          {isAdmin && (
+            <TouchableOpacity style={s.addPhotoButton} onPress={openEditModal} activeOpacity={0.8}>
+              <Ionicons name="pencil-outline" size={16} color="#fff" />
+              <Text style={s.addPhotoText}>{tr('edit_group')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={s.infoCard}>
@@ -458,6 +521,66 @@ export default function GroupInfoScreen() {
               </TouchableOpacity>
             </View>
           )}
+        </SafeAreaView>
+      </Modal>
+
+      <Modal visible={editModalVisible} animationType="slide" onRequestClose={closeEditModal}>
+        <SafeAreaView style={[s.container, { flex: 1 }]}>
+          <View style={[s.header, { justifyContent: 'space-between' }]}>
+            <TouchableOpacity onPress={closeEditModal} style={s.backButton} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={24} color={colors.accent} />
+            </TouchableOpacity>
+            <Text style={s.headerTitle}>{tr('edit_group')}</Text>
+            <View style={s.backButton} />
+          </View>
+          <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={s.avatarSection}>
+              <View style={s.avatarWrapper}>
+                <View style={s.avatar}>
+                  {editAvatarUri ? (
+                    <Image source={{ uri: editAvatarUri }} style={s.avatarImage} />
+                  ) : (
+                    <Text style={s.avatarInitials}>{(editName || 'Г').charAt(0).toUpperCase()}</Text>
+                  )}
+                </View>
+              </View>
+              <TouchableOpacity style={s.addPhotoButton} onPress={handleChangeGroupPhoto} activeOpacity={0.8}>
+                <Ionicons name="camera-outline" size={16} color="#fff" />
+                <Text style={s.addPhotoText}>
+                  {editAvatarUri ? tr('change_photo') : tr('add_photo')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={s.infoCard}>
+              <View style={s.infoRow}>
+                <View style={s.infoIcon}>
+                  <Ionicons name="people-outline" size={20} color={colors.accent} />
+                </View>
+                <View style={s.infoTextGroup}>
+                  <Text style={s.infoLabel}>{tr('field_group_name')}</Text>
+                  <TextInput
+                    style={s.infoInput}
+                    value={editName}
+                    onChangeText={setEditName}
+                    placeholder={tr('placeholder_group_name')}
+                    placeholderTextColor={colors.subtext}
+                  />
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[s.createGroupButton, editSaving && { opacity: 0.7 }]}
+              onPress={handleSaveGroupEdit}
+              activeOpacity={0.8}
+              disabled={editSaving}
+            >
+              {editSaving ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={s.createGroupButtonText}>{tr('save')}</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>

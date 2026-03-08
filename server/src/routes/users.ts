@@ -46,6 +46,34 @@ router.get('/search', async (req: AuthRequest, res) => {
   res.json({ users });
 });
 
+const LOOKUP_PHONES_MAX = 100;
+
+/** POST /users/lookup-by-phones — resolve which phone numbers belong to app users. Body: { phones: string[] }. */
+router.post('/lookup-by-phones', async (req: AuthRequest, res) => {
+  const body = req.body as { phones?: string[] };
+  const raw = body?.phones;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    res.status(400).json({ error: 'err_invalid_body' });
+    return;
+  }
+  if (raw.length > LOOKUP_PHONES_MAX) {
+    res.status(400).json({ error: 'err_too_many_phones' });
+    return;
+  }
+  const normalized = raw.map((p) => {
+    const digits = String(p).replace(/\D/g, '');
+    if (digits.startsWith('8') && digits.length >= 2) return '+7' + digits.slice(1);
+    if (digits.startsWith('7') && digits.length >= 2) return '+' + digits;
+    return digits.length > 0 ? '+' + digits : '';
+  }).filter(Boolean);
+  const unique = [...new Set(normalized)];
+  const users = await prisma.user.findMany({
+    where: { phone: { in: unique } },
+    select: { id: true, username: true, displayName: true, avatar: true, phone: true },
+  });
+  res.json({ users });
+});
+
 /** GET /users/:id — get public profile of a user (for profile page) */
 router.get('/:id', async (req: AuthRequest, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;

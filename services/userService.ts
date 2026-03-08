@@ -36,6 +36,14 @@ async function searchByUsername(query: string): Promise<Pick<User, 'id' | 'usern
   return data.users;
 }
 
+export type LookupUser = Pick<User, 'id' | 'username' | 'displayName' | 'avatar'> & { phone: string };
+
+async function lookupByPhones(phones: string[]): Promise<LookupUser[]> {
+  if (phones.length === 0) return [];
+  const data = await api.post<{ users: LookupUser[] }>('/users/lookup-by-phones', { phones });
+  return data.users;
+}
+
 export type PublicProfile = Pick<User, 'id' | 'username' | 'displayName' | 'avatar'> & { phone?: string; createdAt: string };
 
 async function getProfileById(userId: string): Promise<PublicProfile | null> {
@@ -51,5 +59,6 @@ export const userService = {
   getMe,
   update,
   searchByUsername,
+  lookupByPhones,
   getProfileById,
 };

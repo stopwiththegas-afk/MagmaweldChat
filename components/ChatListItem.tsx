@@ -5,7 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useT } from '@/i18n';
 import { useSettings } from '@/context/settings';
 
-type Props = { chat: { id: string; name: string; username?: string; otherUserId?: string | null; avatar?: string | null; isGroup?: boolean; lastMessage: string; timestamp: string; unreadCount: number } };
+type Props = { chat: { id: string; name: string; username?: string; otherUserId?: string | null; avatar?: string | null; isGroup?: boolean; lastMessage: string; timestamp: string; unreadCount: number; participantCount?: number } };
 
 export default function ChatListItem({ chat }: Props) {
   const { colors } = useSettings();
@@ -16,6 +16,9 @@ export default function ChatListItem({ chat }: Props) {
   const displayName = chat.isGroup
     ? (chat.name || 'Группа')
     : (!chat.otherUserId || chat.otherUserId === '' ? tr('deleted_user') : chat.name);
+  const participantLabel = chat.isGroup && chat.participantCount != null
+    ? ` · ${chat.participantCount}`
+    : '';
   const initial = displayName.charAt(0).toUpperCase();
   const timeLabel = (() => {
     try {
@@ -47,7 +50,10 @@ export default function ChatListItem({ chat }: Props) {
 
       <View style={styles.body}>
         <View style={styles.topRow}>
-          <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {displayName}
+            {participantLabel ? <Text style={styles.participantCount}>{participantLabel}</Text> : null}
+          </Text>
           <Text style={styles.time}>{timeLabel}</Text>
         </View>
         <View style={styles.bottomRow}>
@@ -100,6 +106,11 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       fontWeight: '600',
       color: c.text,
       marginRight: 8,
+    },
+    participantCount: {
+      fontWeight: '400',
+      color: c.subtext,
+      fontSize: 14,
     },
     time: {
       fontSize: 12,

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -45,6 +46,7 @@ export default function ChatScreen() {
   const [isGroup, setIsGroup] = useState(isGroupParam === '1' || isGroupParam === 'true');
   const [groupName, setGroupName] = useState(name ?? '');
   const [groupAvatar, setGroupAvatar] = useState(avatar ?? '');
+  const [groupParticipantCount, setGroupParticipantCount] = useState<number | null>(null);
 
   /** Чат с удалённым пользователем — нет второго участника, поле ввода скрыто */
   const isOtherUserDeleted = !isGroup && (!otherUserId || otherUserId === '');
@@ -62,6 +64,7 @@ export default function ChatScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [isBlockedByOther, setIsBlockedByOther] = useState(false);
   const [haveBlockedOther, setHaveBlockedOther] = useState(false);
+  const [groupAdminId, setGroupAdminId] = useState<string | null>(null);
   const inputTextRef = useRef('');
   const inputRef = useRef<TextInputType>(null);
   const listRef = useRef<FlatList>(null);
@@ -82,6 +85,11 @@ export default function ChatScreen() {
         setIsGroup(true);
         if (info.name != null) setGroupName(info.name);
         if (info.avatar != null) setGroupAvatar(info.avatar ?? '');
+        setGroupAdminId(info.adminId ?? null);
+        setGroupParticipantCount(info.participants?.length ?? null);
+      } else {
+        setGroupAdminId(null);
+        setGroupParticipantCount(null);
       }
     }).catch(() => {});
 
@@ -98,6 +106,17 @@ export default function ChatScreen() {
       unsubscribe();
     };
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!id || !isGroup) return;
+      chatService.getChatInfo(id).then((info) => {
+        if (info.isGroup && info.name != null) setGroupName(info.name);
+        if (info.isGroup && info.avatar != null) setGroupAvatar(info.avatar ?? '');
+        if (info.isGroup) setGroupParticipantCount(info.participants?.length ?? null);
+      }).catch(() => {});
+    }, [id, isGroup])
+  );
 
   const sendMessage = () => {
     const text = inputTextRef.current.trim();
@@ -258,6 +277,14 @@ export default function ChatScreen() {
   };
 
   const displayName = isGroup ? (groupName || name || 'Группа') : (isOtherUserDeleted ? tr('deleted_user') : (name ?? 'Чат'));
+  const groupMemberWord = (n: number) => {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 14) return tr('group_member_5_0');
+    if (mod10 === 1) return tr('group_member_1');
+    if (mod10 >= 2 && mod10 <= 4) return tr('group_member_2_4');
+    return tr('group_member_5_0');
+  };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
@@ -287,9 +314,20 @@ export default function ChatScreen() {
               </Text>
             </View>
             <View style={styles.headerInfo}>
-              <Text style={styles.headerName} numberOfLines={1}>
-                {displayName}
-              </Text>
+              {isGroup && groupParticipantCount != null ? (
+                <View style={styles.headerNameRow}>
+                  <Text style={styles.headerNameMain} numberOfLines={1}>
+                    {displayName}
+                  </Text>
+                  <Text style={styles.headerNameCount} numberOfLines={1}>
+                    {groupParticipantCount} {groupMemberWord(groupParticipantCount)}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.headerName} numberOfLines={1}>
+                  {displayName}
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
           <View style={styles.headerActions}>
@@ -323,16 +361,20 @@ export default function ChatScreen() {
                     <Ionicons name="notifications-outline" size={18} color={colors.text} style={styles.menuItemIcon} />
                     <Text style={[styles.menuItemText, { color: colors.text }]}>{tr('notifications')}</Text>
                   </TouchableOpacity>
-                  <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={handleLeaveGroup}
-                    disabled={actionLoading}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="exit-outline" size={18} color="#c0392b" style={styles.menuItemIcon} />
-                    <Text style={[styles.menuItemText, styles.menuItemDanger]}>{tr('leave_group')}</Text>
-                  </TouchableOpacity>
+                  {user?.id && groupAdminId !== user.id ? (
+                    <>
+                      <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
+                      <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={handleLeaveGroup}
+                        disabled={actionLoading}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="exit-outline" size={18} color="#c0392b" style={styles.menuItemIcon} />
+                        <Text style={[styles.menuItemText, styles.menuItemDanger]}>{tr('leave_group')}</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -508,6 +550,9 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
     avatarText: { color: '#fff', fontSize: 17, fontWeight: '700' },
     headerInfo: { flex: 1 },
     headerName: { fontSize: 16, fontWeight: '700', color: c.text },
+    headerNameRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap' },
+    headerNameMain: { fontSize: 16, fontWeight: '700', color: c.text, flexShrink: 1 },
+    headerNameCount: { fontSize: 13, fontWeight: '500', color: c.subtext, marginLeft: 18 },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     headerActionBtn: { padding: 8 },
     menuOverlay: {

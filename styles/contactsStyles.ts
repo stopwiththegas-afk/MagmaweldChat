@@ -94,4 +94,14 @@ export const makeContactsStyles = (c: AppColors) =>
       paddingVertical: 24,
       paddingHorizontal: 20,
     },
+    sectionHeader: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      paddingTop: 16,
+    },
+    sectionHeaderText: {
+      fontSize: 13,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+    },
   });

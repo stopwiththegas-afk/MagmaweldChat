@@ -10,6 +10,7 @@ export interface ChatSummary {
   lastMessage: string;
   timestamp: string;
   unreadCount: number;
+  participantCount?: number;
 }
 
 export interface ApiMessage {
@@ -61,6 +62,18 @@ async function removeGroupParticipant(chatId: string, userId: string): Promise<v
   await api.delete(`/chats/${chatId}/participants/${userId}`);
 }
 
+export interface UpdateGroupParams {
+  name?: string;
+  avatar?: string | null;
+}
+
+async function updateGroup(chatId: string, params: UpdateGroupParams): Promise<void> {
+  const body: { name?: string; avatar?: string | null } = {};
+  if (params.name !== undefined) body.name = params.name;
+  if (params.avatar !== undefined) body.avatar = params.avatar;
+  await api.patch(`/chats/${chatId}`, body);
+}
+
 async function getMessages(chatId: string, before?: string): Promise<ApiMessage[]> {
   const query = before ? `?before=${encodeURIComponent(before)}` : '';
   const data = await api.get<{ messages: ApiMessage[] }>(`/chats/${chatId}/messages${query}`);
@@ -110,6 +123,7 @@ export const chatService = {
   getChats,
   openOrCreateChat,
   createGroup,
+  updateGroup,
   leaveGroup,
   addGroupParticipants,
   removeGroupParticipant,

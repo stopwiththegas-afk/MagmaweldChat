@@ -35,6 +35,7 @@ router.get('/', async (req: AuthRequest, res) => {
       lastMessage: lastMsg?.text ?? '',
       timestamp: lastMsg?.createdAt.toISOString() ?? chat.createdAt.toISOString(),
       unreadCount: 0,
+      ...(isGroup && { participantCount: chat.participants.length }),
     };
   });
 
@@ -152,6 +153,39 @@ router.post('/', async (req: AuthRequest, res) => {
   res.status(201).json({ chatId: chat.id });
 });
 
+/** PATCH /chats/:chatId — update group name and/or avatar (admin only) */
+router.patch('/:chatId', async (req: AuthRequest, res) => {
+  const chatId = req.params.chatId as string;
+  const body = req.body as { name?: string; avatar?: string | null };
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+    include: { chat: true },
+  });
+  if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
+  if (participant.chat.name == null) { res.status(400).json({ error: 'err_not_a_group' }); return; }
+  if (participant.chat.adminId !== req.userId) { res.status(403).json({ error: 'err_only_admin_can_edit_group' }); return; }
+
+  const data: { name?: string; avatar?: string | null } = {};
+  if (body.name !== undefined) {
+    const name = String(body.name).trim() || 'Группа';
+    data.name = name;
+  }
+  if (body.avatar !== undefined) {
+    if (body.avatar === null || body.avatar === '') {
+      data.avatar = null;
+    } else {
+      const avatar = String(body.avatar).trim();
+      if (avatar.length > 2048) { res.status(400).json({ error: 'err_invalid_avatar' }); return; }
+      try { new URL(avatar); } catch { res.status(400).json({ error: 'err_invalid_avatar' }); return; }
+      data.avatar = avatar;
+    }
+  }
+  if (Object.keys(data).length === 0) { res.status(400).json({ error: 'err_missing_fields' }); return; }
+
+  await prisma.chat.update({ where: { id: chatId }, data });
+  res.json({ ok: true });
+});
+
 /** POST /chats/:chatId/leave — leave a group (only for group chats) */
 router.post('/:chatId/leave', async (req: AuthRequest, res) => {
   const chatId = req.params.chatId as string;
@@ -165,7 +199,14 @@ router.post('/:chatId/leave', async (req: AuthRequest, res) => {
     where: { chatId_userId: { chatId, userId: req.userId! } },
   });
   const remaining = await prisma.chatParticipant.count({ where: { chatId } });
-  if (remaining === 0) await prisma.chat.delete({ where: { id: chatId } });
+  if (remaining === 0) {
+    await prisma.chat.delete({ where: { id: chatId } });
+  } else if (remaining <= 2) {
+    await prisma.chat.update({
+      where: { id: chatId },
+      data: { name: null, avatar: null, adminId: null },
+    });
+  }
   res.status(204).send();
 });
 
@@ -224,7 +265,14 @@ router.delete('/:chatId/participants/:userId', async (req: AuthRequest, res) => 
     where: { chatId, userId: targetUserId },
   });
   const remaining = await prisma.chatParticipant.count({ where: { chatId } });
-  if (remaining === 0) await prisma.chat.delete({ where: { id: chatId } });
+  if (remaining === 0) {
+    await prisma.chat.delete({ where: { id: chatId } });
+  } else if (remaining <= 2) {
+    await prisma.chat.update({
+      where: { id: chatId },
+      data: { name: null, avatar: null, adminId: null },
+    });
+  }
   res.status(204).send();
 });
 
