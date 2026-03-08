@@ -1,5 +1,12 @@
-import { Request, Response, Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import { Request, RequestHandler, Response, Router } from 'express';
+// require used so build works when express-rate-limit types are not resolved (e.g. on server)
+const rateLimit = require('express-rate-limit') as (opts: {
+  windowMs: number;
+  max: number;
+  handler?: (req: Request, res: Response) => void;
+  standardHeaders?: boolean;
+  legacyHeaders?: boolean;
+}) => RequestHandler;
 import jwt from 'jsonwebtoken';
 
 import { sendAdminNotification } from '../bot.js';
