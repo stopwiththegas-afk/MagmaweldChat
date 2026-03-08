@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Request, Response, Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 
@@ -22,7 +22,7 @@ const PHONE_REGEX = /^\+7\d{10}$/;
 const sendCodeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
   max: 3,
-  handler: (_req, res) => res.status(429).json({ error: 'err_rate_limit' }),
+  handler: (_req: Request, res: Response) => res.status(429).json({ error: 'err_rate_limit' }),
   standardHeaders: true,
   legacyHeaders: false,
 });
