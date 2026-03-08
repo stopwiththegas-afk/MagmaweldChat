@@ -56,7 +56,7 @@ export function setupSocket(httpServer: HttpServer): void {
         });
         if (!participant) { ack?.({ error: 'Forbidden' }); return; }
 
-        const isGroup = participant.chat.participants.length >= 3;
+        const isGroup = participant.chat.name != null || participant.chat.participants.length >= 3;
         if (!isGroup) {
           const otherParticipants = await prisma.chatParticipant.findMany({
             where: { chatId, userId: { not: userId } },

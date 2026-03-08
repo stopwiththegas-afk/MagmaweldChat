@@ -58,7 +58,7 @@ router.post('/', async (req: AuthRequest, res) => {
   });
   if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
 
-  const isGroup = participant.chat.participants.length >= 3;
+  const isGroup = participant.chat.name != null || participant.chat.participants.length >= 3;
   if (!isGroup) {
     const otherParticipantIds = await prisma.chatParticipant.findMany({
       where: { chatId, userId: { not: req.userId! } },
