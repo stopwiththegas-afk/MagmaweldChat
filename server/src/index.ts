@@ -1,4 +1,8 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env from server root (not dist), so PM2 works regardless of cwd
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 import cors from 'cors';
 import express from 'express';
 import http from 'http';
