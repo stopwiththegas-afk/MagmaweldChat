@@ -54,7 +54,16 @@ export default function LoginScreen() {
       await sendCode(normalizePhone(cleaned));
       router.push('/(auth)/verify');
     } catch (e: any) {
-      setError(tr('err_generic'));
+      const msg = String(e?.message ?? '');
+      const serverKeys = ['err_invalid_phone', 'err_rate_limit', 'err_missing_fields'] as const;
+      const isNetwork = msg.includes('fetch') || msg.includes('network') || e?.name === 'TypeError';
+      const displayMsg =
+        serverKeys.includes(msg as (typeof serverKeys)[number])
+          ? tr(msg as (typeof serverKeys)[number])
+          : isNetwork
+            ? tr('err_network')
+            : tr('err_generic');
+      setError(displayMsg);
     } finally {
       setIsLoading(false);
     }

@@ -16,17 +16,6 @@ export default function ChatListItem({ chat }: Props) {
   const displayName = chat.isGroup
     ? (chat.name || 'Группа')
     : (!chat.otherUserId || chat.otherUserId === '' ? tr('deleted_user') : chat.name);
-  const participantLabel = chat.isGroup && chat.participantCount != null
-    ? (() => {
-        const n = chat.participantCount;
-        const mod10 = n % 10;
-        const mod100 = n % 100;
-        const key = mod10 === 1 && mod100 !== 11 ? 'group_member_1'
-          : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? 'group_member_2_4'
-          : 'group_member_5_0';
-        return ` · ${n} ${tr(key)}`;
-      })()
-    : '';
   const lastMessagePreview = (() => {
     if (chat.lastMessage.trim()) {
       return chat.isGroup && chat.lastMessageSenderName
@@ -66,10 +55,7 @@ export default function ChatListItem({ chat }: Props) {
 
       <View style={styles.body}>
         <View style={styles.topRow}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
-            {participantLabel ? <Text style={styles.participantCount} numberOfLines={1}>{participantLabel}</Text> : null}
-          </View>
+          <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
           <Text style={styles.time}>{timeLabel}</Text>
         </View>
         <View style={styles.bottomRow}>
@@ -116,26 +102,12 @@ const makeStyles = (c: ReturnType<typeof useSettings>['colors']) =>
       justifyContent: 'space-between',
       marginBottom: 3,
     },
-    nameRow: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      minWidth: 0,
-      marginRight: 8,
-    },
     name: {
+      flex: 1,
       fontSize: 16,
       fontWeight: '600',
       color: c.text,
-      flexShrink: 1,
-      minWidth: 0,
-    },
-    participantCount: {
-      fontWeight: '400',
-      color: c.subtext,
-      fontSize: 14,
-      flexShrink: 0,
-      marginLeft: 2,
+      marginRight: 8,
     },
     time: {
       fontSize: 12,

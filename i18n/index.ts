@@ -11,6 +11,7 @@ export const translations = {
     back: '← Назад',
     cancel: 'Отмена',
     err_generic: 'Произошла ошибка',
+    err_network: 'Не удалось подключиться к серверу. Проверьте интернет.',
 
     // settings
     language: 'Язык',
@@ -148,6 +149,7 @@ export const translations = {
     back: '← Back',
     cancel: 'Cancel',
     err_generic: 'An error occurred',
+    err_network: 'Could not connect to the server. Check your connection.',
 
     // settings
     language: 'Language',
@@ -285,6 +287,7 @@ export const translations = {
     back: '← Geri',
     cancel: 'İptal',
     err_generic: 'Bir hata oluştu',
+    err_network: 'Sunucuya bağlanılamadı. Bağlantınızı kontrol edin.',
 
     // settings
     language: 'Dil',
