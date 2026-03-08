@@ -2,6 +2,19 @@ import { Telegraf } from 'telegraf';
 
 import { getDailyCode } from './lib/dailyCode.js';
 
+let botInstance: Telegraf | null = null;
+
+/** Send a message to the admin (e.g. on new registration). No-op if bot or TELEGRAM_ADMIN_CHAT_ID not set. */
+export async function sendAdminNotification(message: string): Promise<void> {
+  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (!chatId || !botInstance) return;
+  try {
+    await botInstance.telegram.sendMessage(chatId, message, { parse_mode: 'HTML' });
+  } catch (err) {
+    console.error('Telegram sendAdminNotification error:', err);
+  }
+}
+
 export function startTelegramBot(): void {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
@@ -10,6 +23,7 @@ export function startTelegramBot(): void {
   }
 
   const bot = new Telegraf(token);
+  botInstance = bot;
 
   const handleCodeRequest = async (ctx: { reply: (text: string) => Promise<unknown> }) => {
     try {
