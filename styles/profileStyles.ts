@@ -217,6 +217,7 @@ export const makeProfileStyles = (c: AppColors) =>
       borderRadius: 10,
       backgroundColor: c.divider,
     },
+    roleBadgeText: {
       fontSize: 13,
       color: c.accent,
       fontWeight: '700',
