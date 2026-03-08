@@ -15,13 +15,18 @@ function normalizePhoneQuery(q: string): string {
   return q;
 }
 
-/** GET /users/search?q=... — find users by phone, displayName or username */
+const SEARCH_QUERY_MAX = 100;
+
+/** GET /users/search?q=... — find users by phone, displayName or username.
+ *  Used e.g. when adding group members from main screen. Does NOT filter by block
+ *  (blocked users can be added to groups). Deleted users are not in the table so won't appear. */
 router.get('/search', async (req: AuthRequest, res) => {
   const raw = (req.query.q as string) ?? '';
   const q = raw.replace(/^@/, '').trim();
   const isPhoneLike = /^[\d+\s\-()]+$/.test(q);
   const minLen = isPhoneLike ? 1 : 2;
   if (q.length < minLen) { res.status(400).json({ error: 'err_query_too_short' }); return; }
+  if (q.length > SEARCH_QUERY_MAX) { res.status(400).json({ error: 'err_query_too_long' }); return; }
 
   const phoneSearch = isPhoneLike ? normalizePhoneQuery(q) : q;
 

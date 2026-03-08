@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Keyboard,
   Modal,
@@ -25,7 +26,14 @@ import { ApiMessage, chatService } from '@/services/chatService';
 import { socketService } from '@/services/socketService';
 
 export default function ChatScreen() {
-  const { id, name, username, otherUserId, avatar } = useLocalSearchParams<{ id: string; name?: string; username?: string; otherUserId?: string; avatar?: string }>();
+  const { id, name, username, otherUserId, avatar, isGroup: isGroupParam } = useLocalSearchParams<{
+    id: string;
+    name?: string;
+    username?: string;
+    otherUserId?: string;
+    avatar?: string;
+    isGroup?: string;
+  }>();
   const { user } = useAuth();
   const router = useRouter();
   const { colors, theme } = useSettings();
@@ -34,8 +42,12 @@ export default function ChatScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
+  const [isGroup, setIsGroup] = useState(isGroupParam === '1' || isGroupParam === 'true');
+  const [groupName, setGroupName] = useState(name ?? '');
+  const [groupAvatar, setGroupAvatar] = useState(avatar ?? '');
+
   /** Чат с удалённым пользователем — нет второго участника, поле ввода скрыто */
-  const isOtherUserDeleted = !otherUserId || otherUserId === '';
+  const isOtherUserDeleted = !isGroup && (!otherUserId || otherUserId === '');
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
@@ -66,6 +78,11 @@ export default function ChatScreen() {
     chatService.getChatInfo(id).then((info) => {
       setIsBlockedByOther(info.blockedByOther);
       setHaveBlockedOther(info.haveBlockedOther);
+      if (info.isGroup) {
+        setIsGroup(true);
+        if (info.name != null) setGroupName(info.name);
+        if (info.avatar != null) setGroupAvatar(info.avatar ?? '');
+      }
     }).catch(() => {});
 
     const unsubscribe = socketService.onNewMessage((msg) => {
@@ -119,8 +136,20 @@ export default function ChatScreen() {
 
   const handleClearHistory = async () => {
     if (!id || actionLoading) return;
-    setActionLoading(true);
     setMenuVisible(false);
+    Alert.alert(
+      tr('clear_history_confirm_title'),
+      tr('clear_history_confirm_message'),
+      [
+        { text: tr('cancel'), style: 'cancel' },
+        { text: tr('clear_history_confirm_btn'), onPress: doClearHistory },
+      ]
+    );
+  };
+
+  const doClearHistory = async () => {
+    if (!id || actionLoading) return;
+    setActionLoading(true);
     try {
       await chatService.clearChatHistory(id);
       setMessages([]);
@@ -133,8 +162,20 @@ export default function ChatScreen() {
 
   const handleDeleteChat = async () => {
     if (!id || actionLoading) return;
-    setActionLoading(true);
     setMenuVisible(false);
+    Alert.alert(
+      tr('delete_chat_confirm_title'),
+      tr('delete_chat_confirm_message'),
+      [
+        { text: tr('cancel'), style: 'cancel' },
+        { text: tr('delete_chat'), onPress: doDeleteChat },
+      ]
+    );
+  };
+
+  const doDeleteChat = async () => {
+    if (!id || actionLoading) return;
+    setActionLoading(true);
     try {
       await chatService.deleteChat(id);
       router.replace('/(tabs)');
@@ -147,8 +188,20 @@ export default function ChatScreen() {
 
   const handleBlockUser = async () => {
     if (!id || actionLoading || !otherUserId) return;
-    setActionLoading(true);
     setMenuVisible(false);
+    Alert.alert(
+      tr('block_user_confirm_title'),
+      tr('block_user_confirm_message'),
+      [
+        { text: tr('cancel'), style: 'cancel' },
+        { text: tr('block_user'), onPress: doBlockUser },
+      ]
+    );
+  };
+
+  const doBlockUser = async () => {
+    if (!id || actionLoading || !otherUserId) return;
+    setActionLoading(true);
     try {
       await chatService.blockUserInChat(id);
       setHaveBlockedOther(true);
@@ -173,6 +226,39 @@ export default function ChatScreen() {
     }
   };
 
+  const handleLeaveGroup = () => {
+    if (!id || actionLoading || !isGroup) return;
+    setMenuVisible(false);
+    Alert.alert(
+      tr('leave_group_confirm_title'),
+      tr('leave_group_confirm_message'),
+      [
+        { text: tr('cancel'), style: 'cancel' },
+        { text: tr('leave_group'), style: 'destructive', onPress: doLeaveGroup },
+      ]
+    );
+  };
+
+  const doLeaveGroup = async () => {
+    if (!id || actionLoading || !isGroup) return;
+    setActionLoading(true);
+    try {
+      await chatService.leaveGroup(id);
+      router.replace('/(tabs)');
+    } catch {
+      // ignore
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenGroupInfo = () => {
+    if (!id || !isGroup) return;
+    router.push({ pathname: '/chat/[id]/group-info', params: { id } });
+  };
+
+  const displayName = isGroup ? (groupName || name || 'Группа') : (isOtherUserDeleted ? tr('deleted_user') : (name ?? 'Чат'));
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <StatusBar
@@ -189,19 +275,20 @@ export default function ChatScreen() {
             style={styles.headerUserTouch}
             activeOpacity={0.7}
             onPress={() => {
-              if (otherUserId && username) {
+              if (isGroup) handleOpenGroupInfo();
+              else if (otherUserId && username) {
                 router.push({ pathname: '/user/[id]', params: { id: otherUserId, username, displayName: name ?? '', avatar: avatar ?? '' } });
               }
             }}
           >
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {(isOtherUserDeleted ? tr('deleted_user') : (name ?? 'Чат')).charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </Text>
             </View>
             <View style={styles.headerInfo}>
               <Text style={styles.headerName} numberOfLines={1}>
-                {isOtherUserDeleted ? tr('deleted_user') : (name ?? 'Чат')}
+                {displayName}
               </Text>
             </View>
           </TouchableOpacity>
@@ -225,6 +312,56 @@ export default function ChatScreen() {
         >
           <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
             <Pressable style={[styles.menuCard, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+              {isGroup ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => { setMenuVisible(false); /* TODO: notifications */ }}
+                    disabled={actionLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="notifications-outline" size={18} color={colors.text} style={styles.menuItemIcon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>{tr('notifications')}</Text>
+                  </TouchableOpacity>
+                  <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={handleLeaveGroup}
+                    disabled={actionLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="exit-outline" size={18} color="#c0392b" style={styles.menuItemIcon} />
+                    <Text style={[styles.menuItemText, styles.menuItemDanger]}>{tr('leave_group')}</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  if (isOtherUserDeleted || isBlockedByOther || haveBlockedOther) return;
+                  if (otherUserId) {
+                    router.push({
+                      pathname: '/(tabs)/create-group',
+                      params: {
+                        otherUserId,
+                        otherUserName: name ?? '',
+                        otherUserUsername: username ?? '',
+                        otherUserAvatar: avatar ?? '',
+                      },
+                    });
+                  } else {
+                    router.push('/(tabs)/create-group');
+                  }
+                }}
+                disabled={actionLoading}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="people-outline" size={18} color={colors.text} style={styles.menuItemIcon} />
+                <Text style={[styles.menuItemText, { color: colors.text }]}>{tr('create_group')}</Text>
+              </TouchableOpacity>
+              <View style={[styles.menuDivider, { backgroundColor: colors.divider }]} />
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={handleClearHistory}
@@ -258,6 +395,8 @@ export default function ChatScreen() {
                 <Ionicons name="chatbubble-ellipses-outline" size={18} color="#c0392b" style={styles.menuItemIcon} />
                 <Text style={[styles.menuItemText, styles.menuItemDanger]}>{tr('delete_chat')}</Text>
               </TouchableOpacity>
+                </>
+              )}
             </Pressable>
           </Pressable>
         </Modal>
@@ -288,7 +427,7 @@ export default function ChatScreen() {
           />
         )}
 
-        {!isOtherUserDeleted && !isBlockedByOther && !haveBlockedOther && (
+        {(isGroup || (!isOtherUserDeleted && !isBlockedByOther && !haveBlockedOther)) && (
           <View style={[styles.inputBar, { paddingBottom: 8 + (keyboardVisible ? 0 : insets.bottom) }]}>
             <TextInput
               ref={inputRef}
@@ -313,17 +452,17 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </View>
         )}
-        {isOtherUserDeleted && (
+        {!isGroup && isOtherUserDeleted && (
           <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
             <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('cannot_send_to_deleted_user')}</Text>
           </View>
         )}
-        {isBlockedByOther && (
+        {!isGroup && isBlockedByOther && (
           <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
             <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('blocked_cannot_send')}</Text>
           </View>
         )}
-        {haveBlockedOther && (
+        {!isGroup && haveBlockedOther && (
           <View style={[styles.inputBar, styles.inputBarDisabled, { paddingBottom: 8 + insets.bottom }]}>
             <Text style={[styles.inputBarDisabledText, { color: colors.subtext }]}>{tr('have_blocked_cannot_send')}</Text>
           </View>

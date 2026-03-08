@@ -54,6 +54,12 @@ export const translations = {
     delete_group_confirm_message: 'Группа и все сообщения будут удалены безвозвратно. Продолжить?',
     group_min_members_hint: 'В группе должно быть минимум 3 участника (включая вас). Добавьте ещё участников.',
 
+    // group chat menu
+    notifications: 'Уведомления',
+    leave_group: 'Выйти из группы',
+    leave_group_confirm_title: 'Выйти из группы?',
+    leave_group_confirm_message: 'Вы перестанете получать сообщения в этой группе.',
+
     // chat menu
     clear_history: 'Очистить историю',
     delete_chat: 'Удалить чат',
@@ -168,6 +174,12 @@ export const translations = {
     delete_group_confirm_message: 'The group and all messages will be permanently deleted. Continue?',
     group_min_members_hint: 'A group must have at least 3 members (including you). Add more members.',
 
+    // group chat menu
+    notifications: 'Notifications',
+    leave_group: 'Leave group',
+    leave_group_confirm_title: 'Leave group?',
+    leave_group_confirm_message: 'You will stop receiving messages in this group.',
+
     // chat menu
     clear_history: 'Clear history',
     delete_chat: 'Delete chat',
@@ -281,6 +293,12 @@ export const translations = {
     delete_group_confirm_title: 'Grubu sil?',
     delete_group_confirm_message: 'Grup ve tüm mesajlar kalıcı olarak silinecek. Devam edilsin mi?',
     group_min_members_hint: 'Grupta en az 3 üye olmalıdır (siz dahil). Daha fazla üye ekleyin.',
+
+    // group chat menu
+    notifications: 'Bildirimler',
+    leave_group: 'Gruptan ayrıl',
+    leave_group_confirm_title: 'Gruptan ayrıl?',
+    leave_group_confirm_message: 'Bu grupta artık mesaj almayacaksınız.',
 
     // chat menu
     clear_history: 'Geçmişi temizle',

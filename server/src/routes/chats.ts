@@ -22,14 +22,16 @@ router.get('/', async (req: AuthRequest, res) => {
   });
 
   const chats = participations.map(({ chat }) => {
+    const isGroup = chat.name != null;
     const other = chat.participants.find((p) => p.userId !== req.userId);
     const lastMsg = chat.messages[0];
     return {
       id: chat.id,
-      name: other?.user.displayName ?? 'Чат',
-      username: other?.user.username ?? '',
-      otherUserId: other?.user.id ?? null,
-      avatar: other?.user.avatar ?? null,
+      isGroup: !!isGroup,
+      name: isGroup ? (chat.name ?? 'Группа') : (other?.user.displayName ?? 'Чат'),
+      username: isGroup ? '' : (other?.user.username ?? ''),
+      otherUserId: isGroup ? null : (other?.user.id ?? null),
+      avatar: isGroup ? (chat.avatar ?? null) : (other?.user.avatar ?? null),
       lastMessage: lastMsg?.text ?? '',
       timestamp: lastMsg?.createdAt.toISOString() ?? chat.createdAt.toISOString(),
       unreadCount: 0,
@@ -39,15 +41,17 @@ router.get('/', async (req: AuthRequest, res) => {
   res.json({ chats });
 });
 
-/** GET /chats/:chatId — chat info (blocked status in both directions) */
+/** GET /chats/:chatId — chat info (blocked status for 1-1; for groups: isGroup, name, avatar, adminId) */
 router.get('/:chatId', async (req: AuthRequest, res) => {
   const chatId = req.params.chatId as string;
   const participant = await prisma.chatParticipant.findUnique({
     where: { chatId_userId: { chatId, userId: req.userId! } },
-    include: { chat: { include: { participants: true } } },
+    include: { chat: { include: { participants: { include: { user: { select: { id: true, username: true, displayName: true, avatar: true } } } }, admin: { select: { id: true, username: true, displayName: true, avatar: true } } } } },
   });
   if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
-  const other = participant.chat.participants.find((p) => p.userId !== req.userId);
+  const chat = participant.chat;
+  const isGroup = chat.name != null;
+  const other = chat.participants.find((p) => p.userId !== req.userId);
   const blockedByOther = other
     ? !!(await prisma.blockedUser.findUnique({
         where: { blockerId_blockedId: { blockerId: other.userId, blockedId: req.userId! } },
@@ -58,12 +62,63 @@ router.get('/:chatId', async (req: AuthRequest, res) => {
         where: { blockerId_blockedId: { blockerId: req.userId!, blockedId: other.userId } },
       }))
     : false;
-  res.json({ chatId, blockedByOther, haveBlockedOther });
+  const payload: Record<string, unknown> = { chatId, blockedByOther, haveBlockedOther };
+  if (isGroup) {
+    payload.isGroup = true;
+    payload.name = chat.name;
+    payload.avatar = chat.avatar;
+    payload.adminId = chat.adminId ?? null;
+    payload.createdAt = chat.createdAt.toISOString();
+    payload.participants = chat.participants.map((p) => ({
+      id: p.user.id,
+      username: p.user.username,
+      displayName: p.user.displayName,
+      avatar: p.user.avatar,
+    }));
+    payload.admin = chat.admin ? { id: chat.admin.id, username: chat.admin.username, displayName: chat.admin.displayName, avatar: chat.admin.avatar } : null;
+  }
+  res.json(payload);
 });
 
-/** POST /chats — open or create a direct chat with another user by username */
+/** POST /chats — open/create 1-1 chat by username, OR create group (name + participantIds) */
 router.post('/', async (req: AuthRequest, res) => {
-  const { username } = req.body as { username?: string };
+  const body = req.body as { username?: string; name?: string; avatar?: string; participantIds?: string[] };
+
+  if (body.name != null && Array.isArray(body.participantIds)) {
+    const name = String(body.name).trim();
+    if (name.length === 0) { res.status(400).json({ error: 'err_missing_fields' }); return; }
+    const participantIds = [...new Set(body.participantIds)] as string[];
+    if (!participantIds.every((id) => typeof id === 'string' && id.length > 0)) {
+      res.status(400).json({ error: 'err_invalid_participants' });
+      return;
+    }
+    if (participantIds.includes(req.userId!)) { res.status(400).json({ error: 'err_self_in_participants' }); return; }
+    const totalMembers = 1 + participantIds.length;
+    if (totalMembers < 3) { res.status(400).json({ error: 'err_group_min_3' }); return; }
+
+    const users = await prisma.user.findMany({ where: { id: { in: participantIds } }, select: { id: true } });
+    const foundIds = new Set(users.map((u) => u.id));
+    const missing = participantIds.filter((id) => !foundIds.has(id));
+    if (missing.length > 0) { res.status(404).json({ error: 'err_user_not_found' }); return; }
+
+    const chat = await prisma.chat.create({
+      data: {
+        name,
+        avatar: body.avatar && String(body.avatar).trim() ? String(body.avatar).trim() : undefined,
+        adminId: req.userId!,
+        participants: {
+          create: [
+            { userId: req.userId! },
+            ...participantIds.map((userId) => ({ userId })),
+          ],
+        },
+      },
+    });
+    res.status(201).json({ chatId: chat.id });
+    return;
+  }
+
+  const { username } = body;
   if (!username) { res.status(400).json({ error: 'err_missing_fields' }); return; }
 
   const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
@@ -96,6 +151,23 @@ router.post('/', async (req: AuthRequest, res) => {
   });
 
   res.status(201).json({ chatId: chat.id });
+});
+
+/** POST /chats/:chatId/leave — leave a group (only for group chats) */
+router.post('/:chatId/leave', async (req: AuthRequest, res) => {
+  const chatId = req.params.chatId as string;
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+    include: { chat: true },
+  });
+  if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
+  if (participant.chat.name == null) { res.status(400).json({ error: 'err_not_a_group' }); return; }
+  await prisma.chatParticipant.delete({
+    where: { chatId_userId: { chatId, userId: req.userId! } },
+  });
+  const remaining = await prisma.chatParticipant.count({ where: { chatId } });
+  if (remaining === 0) await prisma.chat.delete({ where: { id: chatId } });
+  res.status(204).send();
 });
 
 /** DELETE /chats/:chatId — delete chat (only if participant) */
