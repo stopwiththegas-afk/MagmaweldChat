@@ -52,28 +52,32 @@ export function setupSocket(httpServer: HttpServer): void {
 
         const participant = await prisma.chatParticipant.findUnique({
           where: { chatId_userId: { chatId, userId } },
+          include: { chat: { select: { name: true } } },
         });
         if (!participant) { ack?.({ error: 'Forbidden' }); return; }
 
-        const otherParticipants = await prisma.chatParticipant.findMany({
-          where: { chatId, userId: { not: userId } },
-          select: { userId: true },
-        });
-        const blocked = await prisma.blockedUser.findFirst({
-          where: {
-            blockedId: userId,
-            blockerId: { in: otherParticipants.map((p) => p.userId) },
-          },
-        });
-        if (blocked) { ack?.({ error: 'err_blocked' }); return; }
+        const isGroup = participant.chat.name != null;
+        if (!isGroup) {
+          const otherParticipants = await prisma.chatParticipant.findMany({
+            where: { chatId, userId: { not: userId } },
+            select: { userId: true },
+          });
+          const blocked = await prisma.blockedUser.findFirst({
+            where: {
+              blockedId: userId,
+              blockerId: { in: otherParticipants.map((p) => p.userId) },
+            },
+          });
+          if (blocked) { ack?.({ error: 'err_blocked' }); return; }
 
-        const iBlockedOther = await prisma.blockedUser.findFirst({
-          where: {
-            blockerId: userId,
-            blockedId: { in: otherParticipants.map((p) => p.userId) },
-          },
-        });
-        if (iBlockedOther) { ack?.({ error: 'err_blocked' }); return; }
+          const iBlockedOther = await prisma.blockedUser.findFirst({
+            where: {
+              blockerId: userId,
+              blockedId: { in: otherParticipants.map((p) => p.userId) },
+            },
+          });
+          if (iBlockedOther) { ack?.({ error: 'err_blocked' }); return; }
+        }
 
         const message = await prisma.message.create({
           data: { chatId, senderId: userId, text: trimmedText },
