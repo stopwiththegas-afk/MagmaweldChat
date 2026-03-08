@@ -15,6 +15,8 @@ module.exports = {
         JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
         TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
         TELEGRAM_ADMIN_USERNAME: process.env.TELEGRAM_ADMIN_USERNAME || 'calmjesper',
+        TELEGRAM_ADMIN_CHAT_ID: process.env.TELEGRAM_ADMIN_CHAT_ID,
+        SERVER_HEALTH_URL: process.env.SERVER_HEALTH_URL,
       },
     },
   ],

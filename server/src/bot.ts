@@ -22,6 +22,7 @@ export function startTelegramBot(): void {
     return;
   }
 
+  console.log('Telegram bot starting...');
   const bot = new Telegraf(token);
   botInstance = bot;
 
@@ -58,9 +59,16 @@ export function startTelegramBot(): void {
     }
   });
 
-  bot.launch().then(() => {
-    console.log('Telegram bot started');
-  }).catch((err) => {
-    console.error('Telegram bot launch error:', err);
-  });
+  // dropPendingUpdates so no old webhook blocks polling
+  bot.launch({ dropPendingUpdates: true })
+    .then(() => bot.telegram.getMe())
+    .then((me) => {
+      console.log('Telegram bot started as @' + (me.username ?? me.id));
+    })
+    .catch((err: unknown) => {
+      console.error('Telegram bot launch error:', err);
+      if (err && typeof (err as { response?: { body?: unknown } }).response !== 'undefined') {
+        console.error('Telegram API response:', (err as { response: { body?: unknown } }).response?.body);
+      }
+    });
 }

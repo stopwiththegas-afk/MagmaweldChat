@@ -1,12 +1,4 @@
-import { Request, RequestHandler, Response, Router } from 'express';
-// require used so build works when express-rate-limit types are not resolved (e.g. on server)
-const rateLimit = require('express-rate-limit') as (opts: {
-  windowMs: number;
-  max: number;
-  handler?: (req: Request, res: Response) => void;
-  standardHeaders?: boolean;
-  legacyHeaders?: boolean;
-}) => RequestHandler;
+import { Request, Response, Router } from 'express';
 import jwt from 'jsonwebtoken';
 
 import { sendAdminNotification } from '../bot.js';
@@ -16,6 +8,8 @@ import { AuthRequest, requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const SEND_CODE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const SEND_CODE_MAX = 3;
 
 const USERNAME_MIN = 3;
 const USERNAME_MAX = 30;
@@ -26,13 +20,44 @@ const CODE_REGEX = /^\d{4}$/;
 const AVATAR_MAX_LEN = 2048;
 const PHONE_REGEX = /^\+7\d{10}$/;
 
-const sendCodeLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 3,
-  handler: (_req: Request, res: Response) => res.status(429).json({ error: 'err_rate_limit' }),
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// In-memory rate limit for send-code (no external package)
+const sendCodeCounts = new Map<string, { count: number; resetAt: number }>();
+
+function getSendCodeRateLimitKey(req: Request): string {
+  return (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
+    ?? req.socket.remoteAddress
+    ?? 'unknown';
+}
+
+function sendCodeRateLimit(req: Request, res: Response, next: () => void): void {
+  const key = getSendCodeRateLimitKey(req);
+  const now = Date.now();
+  const entry = sendCodeCounts.get(key);
+  if (!entry) {
+    sendCodeCounts.set(key, { count: 1, resetAt: now + SEND_CODE_WINDOW_MS });
+    next();
+    return;
+  }
+  if (now >= entry.resetAt) {
+    sendCodeCounts.set(key, { count: 1, resetAt: now + SEND_CODE_WINDOW_MS });
+    next();
+    return;
+  }
+  if (entry.count >= SEND_CODE_MAX) {
+    res.status(429).json({ error: 'err_rate_limit' });
+    return;
+  }
+  entry.count += 1;
+  next();
+}
+
+// Clean old entries every 15 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of sendCodeCounts.entries()) {
+    if (now >= v.resetAt) sendCodeCounts.delete(k);
+  }
+}, 15 * 60 * 1000);
 
 function signToken(userId: string): string {
   return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
@@ -45,7 +70,7 @@ function escapeHtml(s: string): string {
 }
 
 /** POST /auth/send-code — request an SMS verification code */
-router.post('/send-code', sendCodeLimiter, async (req, res) => {
+router.post('/send-code', sendCodeRateLimit, async (req, res) => {
   const { phone } = req.body as { phone?: string };
   if (!phone || !PHONE_REGEX.test(phone)) {
     res.status(400).json({ error: 'err_invalid_phone' });
