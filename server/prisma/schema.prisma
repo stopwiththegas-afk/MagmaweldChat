@@ -28,6 +28,13 @@ model User {
   verifications    PhoneVerification[]
 }
 
+model DailyCode {
+  id        String   @id @default(cuid())
+  date      String   @unique // "2025-03-08"
+  code      String
+  createdAt DateTime @default(now())
+}
+
 model PhoneVerification {
   id        String   @id @default(cuid())
   phone     String

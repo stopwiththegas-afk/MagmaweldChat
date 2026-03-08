@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   Text,
@@ -72,7 +73,7 @@ export default function VerifyScreen() {
           <TextInput
             ref={inputRef}
             style={[styles.input, error ? styles.inputError : null]}
-            placeholder="1234"
+            placeholder=""
             placeholderTextColor={colors.subtext}
             keyboardType="number-pad"
             maxLength={4}
@@ -82,6 +83,18 @@ export default function VerifyScreen() {
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          {(process.env.EXPO_PUBLIC_TELEGRAM_USERNAME ?? '').trim() ? (
+            <TouchableOpacity
+              style={styles.telegramLink}
+              onPress={() =>
+                Linking.openURL(`https://t.me/${process.env.EXPO_PUBLIC_TELEGRAM_USERNAME}`)
+              }
+              activeOpacity={0.8}
+            >
+              <Text style={styles.telegramLinkText}>{tr('verify_telegram_link')}</Text>
+            </TouchableOpacity>
+          ) : null}
 
           <TouchableOpacity
             style={[styles.button, isLoading && styles.buttonDisabled]}

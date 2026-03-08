@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import http from 'http';
 
+import { startTelegramBot } from './bot.js';
 import authRouter from './routes/auth.js';
 import chatsRouter from './routes/chats.js';
 import messagesRouter from './routes/messages.js';
@@ -27,4 +28,5 @@ setupSocket(httpServer);
 const PORT = Number(process.env.PORT) || 3000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startTelegramBot();
 });

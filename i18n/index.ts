@@ -51,6 +51,7 @@ export const translations = {
     verify_subtitle: 'Код отправлен на номер',
     confirm_btn: 'Подтвердить',
     err_code_length: 'Введите 4-значный код',
+    verify_telegram_link: 'Написать в Telegram',
     err_wrong_code: 'Неверный код',
     err_no_phone: 'Номер телефона не указан',
 
@@ -124,6 +125,7 @@ export const translations = {
     verify_subtitle: 'Code sent to',
     confirm_btn: 'Confirm',
     err_code_length: 'Enter a 4-digit code',
+    verify_telegram_link: 'Contact on Telegram',
     err_wrong_code: 'Incorrect code',
     err_no_phone: 'Phone number not specified',
 
@@ -197,6 +199,7 @@ export const translations = {
     verify_subtitle: 'Gönderilen numara',
     confirm_btn: 'Onayla',
     err_code_length: '4 haneli kodu girin',
+    verify_telegram_link: 'Telegram ile iletişime geç',
     err_wrong_code: 'Hatalı kod',
     err_no_phone: 'Telefon numarası belirtilmedi',
 

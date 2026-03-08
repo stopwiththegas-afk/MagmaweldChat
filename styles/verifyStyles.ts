@@ -49,12 +49,23 @@ export const makeVerifyStyles = (c: AppColors) =>
       paddingVertical: 14,
       fontSize: 24,
       color: c.text,
+      opacity: 1,
       letterSpacing: 8,
       textAlign: 'center',
       marginBottom: 8,
     },
     inputError: {
       borderColor: '#e53935',
+    },
+    telegramLink: {
+      marginTop: 16,
+      marginBottom: 8,
+      alignItems: 'center',
+    },
+    telegramLinkText: {
+      color: c.accent,
+      fontSize: 15,
+      textDecorationLine: 'underline',
     },
     error: {
       color: '#e53935',

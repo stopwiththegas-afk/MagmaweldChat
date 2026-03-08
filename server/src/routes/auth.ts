@@ -1,12 +1,11 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 
+import { getDailyCode } from '../lib/dailyCode.js';
 import { prisma } from '../lib/prisma.js';
 import { AuthRequest, requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const MOCK_CODE = '1234';
 const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 function signToken(userId: string): string {
@@ -23,10 +22,11 @@ router.post('/send-code', async (req, res) => {
     return;
   }
 
+  const code = await getDailyCode();
   await prisma.phoneVerification.create({
     data: {
       phone,
-      code: MOCK_CODE,
+      code,
       expiresAt: new Date(Date.now() + CODE_TTL_MS),
     },
   });
