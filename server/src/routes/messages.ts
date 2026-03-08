@@ -54,11 +54,12 @@ router.post('/', async (req: AuthRequest, res) => {
 
   const participant = await prisma.chatParticipant.findUnique({
     where: { chatId_userId: { chatId, userId: req.userId! } },
-    include: { chat: { select: { name: true } } },
+    include: { chat: { select: { name: true, _count: { select: { participants: true } } } } },
   });
   if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
 
-  const isGroup = participant.chat.name != null;
+  const participantCount = participant.chat._count.participants;
+  const isGroup = participant.chat.name != null || participantCount >= 3;
   if (!isGroup) {
     const otherParticipantIds = await prisma.chatParticipant.findMany({
       where: { chatId, userId: { not: req.userId! } },

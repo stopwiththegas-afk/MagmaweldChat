@@ -59,14 +59,14 @@ router.get('/:chatId', async (req: AuthRequest, res) => {
   });
   if (!participant) { res.status(403).json({ error: 'Forbidden' }); return; }
   const chat = participant.chat;
-  const isGroup = chat.name != null;
-  const other = chat.participants.find((p) => p.userId !== req.userId);
-  const blockedByOther = other
+  const isGroup = chat.name != null || chat.participants.length >= 3;
+  const other = isGroup ? null : chat.participants.find((p) => p.userId !== req.userId);
+  const blockedByOther = !isGroup && other
     ? !!(await prisma.blockedUser.findUnique({
         where: { blockerId_blockedId: { blockerId: other.userId, blockedId: req.userId! } },
       }))
     : false;
-  const haveBlockedOther = other
+  const haveBlockedOther = !isGroup && other
     ? !!(await prisma.blockedUser.findUnique({
         where: { blockerId_blockedId: { blockerId: req.userId!, blockedId: other.userId } },
       }))

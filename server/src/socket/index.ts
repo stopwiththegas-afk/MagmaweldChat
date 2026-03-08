@@ -52,11 +52,12 @@ export function setupSocket(httpServer: HttpServer): void {
 
         const participant = await prisma.chatParticipant.findUnique({
           where: { chatId_userId: { chatId, userId } },
-          include: { chat: { select: { name: true } } },
+          include: { chat: { select: { name: true, _count: { select: { participants: true } } } } },
         });
         if (!participant) { ack?.({ error: 'Forbidden' }); return; }
 
-        const isGroup = participant.chat.name != null;
+        const participantCount = participant.chat._count.participants;
+        const isGroup = participant.chat.name != null || participantCount >= 3;
         if (!isGroup) {
           const otherParticipants = await prisma.chatParticipant.findMany({
             where: { chatId, userId: { not: userId } },
